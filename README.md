@@ -414,7 +414,7 @@ npx prisma db seed
 |---|---|
 | 📋 Tablero Kanban | <!-- TODO: Agregar enlace --> |
 | 📌 Issues (todos) | [Ver Issues](https://github.com/cooperativa/control-gastos-sistema/issues) |
-| 🏁 Sprint 1 | [<!-- TODO: Agregar Milestone -->](https://github.com/casalas-2024a-cell/Sistema-de-Control-de-Gastos-Personales-/milestone/1) |
+| 🏁 Sprint 1 | [<!-- TODO: Agregar Milestone -->]|
 | 🏁 Sprint 2 | <!-- TODO: Agregar Milestone --> |
 | 🏁 Sprint 3 | <!-- TODO: Agregar Milestone --> |
 | 🏁 Sprint 4 | <!-- TODO: Agregar Milestone --> |
