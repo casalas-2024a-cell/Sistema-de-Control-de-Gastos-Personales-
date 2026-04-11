@@ -414,12 +414,12 @@ npx prisma db seed
 |---|---|
 | 📋 Tablero Kanban | [Tablero](https://github.com/users/casalas-2024a-cell/projects/1) |
 | 📌 Issues (todos) | [Ver Issues](https://github.com/casalas-2024a-cell/Sistema-de-Control-de-Gastos-Personales-/issues) |
-| 🏁 Sprint 1 | [<!-- TODO: Agregar Milestone -->]|
-| 🏁 Sprint 2 | <!-- TODO: Agregar Milestone --> |
-| 🏁 Sprint 3 | <!-- TODO: Agregar Milestone --> |
-| 🏁 Sprint 4 | <!-- TODO: Agregar Milestone --> |
-| 🏁 Sprint 5 | <!-- TODO: Agregar Milestone --> |
-| 📖 Definition of Done | <!-- TODO: Agregar Issue --> |
+| 🏁 Sprint 1 | [Sprint 1](#sprint-1--infraestructura-y-entidades-base)|
+| 🏁 Sprint 2 | [Sprint 2](#sprint-2--transacciones-y-cross-cutting) |
+| 🏁 Sprint 3 |[Sprint 3](#sprint-3--presupuestos-frontend-base-y-autenticación) |
+| 🏁 Sprint 4 | [Sprint 4](#sprint-4--frontend-avanzado-e-integración) |
+| 🏁 Sprint 5 | [Sprint 5](#sprint-5--cierre-y-despliegue) |
+| 📖 Definition of Done | [DoD](#-definition-of-done-dod) |
 
 ---
 
