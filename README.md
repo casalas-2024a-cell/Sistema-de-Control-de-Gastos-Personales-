@@ -412,7 +412,7 @@ npx prisma db seed
 
 | Recurso | Enlace |
 |---|---|
-| 📋 Tablero Kanban | <!-- TODO: Agregar enlace --> |
+| 📋 Tablero Kanban | [Tablero](https://github.com/users/casalas-2024a-cell/projects/1) |
 | 📌 Issues (todos) | [Ver Issues](https://github.com/casalas-2024a-cell/Sistema-de-Control-de-Gastos-Personales-/issues) |
 | 🏁 Sprint 1 | [<!-- TODO: Agregar Milestone -->]|
 | 🏁 Sprint 2 | <!-- TODO: Agregar Milestone --> |
