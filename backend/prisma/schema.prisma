@@ -8,32 +8,40 @@ datasource db {
 }
 
 model Usuario {
-  id           Int           @id @default(autoincrement())
-  email        String        @unique
-  nombre       String
-  password     String
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id               Int           @id @default(autoincrement())
+  email            String        @unique
+  nombres          String
+  apellidos        String
+  password         String
+  fechaNacimiento  DateTime?
+  moneda           String        @default("COP")
+  isDeleted        Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
   
-  categorias   Categoria[]
-  transacciones Transaccion[]
+  categorias       Categoria[]
+  transacciones    Transaccion[]
 }
 
 model Categoria {
   id           Int           @id @default(autoincrement())
   nombre       String
   descripcion  String?
+  tipo         String        @default("EGRESO") // INGRESO or EGRESO
+  icono        String?
   usuarioId    Int
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   usuario      Usuario       @relation(fields: [usuarioId], references: [id])
   transacciones Transaccion[]
+
+  @@unique([usuarioId, nombre])
 }
 
 model TipoTransaccion {
   id           Int           @id @default(autoincrement())
-  nombre       String        @unique
+  nombre       String        @unique // e.g. "INGRESO", "EGRESO"
   descripcion  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -43,7 +51,7 @@ model TipoTransaccion {
 
 model Periodo {
   id           Int           @id @default(autoincrement())
-  nombre       String
+  nombre       String        @unique // e.g. "2025-06"
   fechaInicio  DateTime
   fechaFin     DateTime
   estado       String        @default("ACTIVO")
