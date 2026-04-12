@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// =============================================
+// SPRINT 1 MODELS (unchanged)
+// =============================================
+
 model Usuario {
   id               Int           @id @default(autoincrement())
   email            String        @unique
@@ -18,30 +22,32 @@ model Usuario {
   isDeleted        Boolean       @default(false)
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
-  
+
   categorias       Categoria[]
   transacciones    Transaccion[]
 }
 
 model Categoria {
-  id           Int           @id @default(autoincrement())
+  id           Int            @id @default(autoincrement())
   nombre       String
   descripcion  String?
-  tipo         String        @default("EGRESO") // INGRESO or EGRESO
+  tipo         String         @default("EGRESO") // INGRESO or EGRESO
   icono        String?
   usuarioId    Int
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
-  usuario      Usuario       @relation(fields: [usuarioId], references: [id])
+  usuario      Usuario        @relation(fields: [usuarioId], references: [id])
   transacciones Transaccion[]
+  // [HU-05] A category can have multiple budgets, one per month/year combination
+  presupuestos  Presupuesto[]
 
   @@unique([usuarioId, nombre])
 }
 
 model TipoTransaccion {
   id           Int           @id @default(autoincrement())
-  nombre       String        @unique // e.g. "INGRESO", "EGRESO"
+  nombre       String        @unique // "INGRESO" or "EGRESO"
   descripcion  String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
@@ -54,13 +60,14 @@ model Periodo {
   nombre       String        @unique // e.g. "2025-06"
   fechaInicio  DateTime
   fechaFin     DateTime
-  estado       String        @default("ACTIVO")
+  estado       String        @default("ACTIVO") // ACTIVO or INACTIVO
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   transacciones Transaccion[]
 }
 
+// [UPDATED for Sprint 2] Transaccion now exposes relation to Alerta
 model Transaccion {
   id                Int             @id @default(autoincrement())
   monto             Float
@@ -77,4 +84,49 @@ model Transaccion {
   categoria         Categoria       @relation(fields: [categoriaId], references: [id])
   tipoTransaccion   TipoTransaccion @relation(fields: [tipoTransaccionId], references: [id])
   periodo           Periodo         @relation(fields: [periodoId], references: [id])
+  // [HU-06] One transaction can optionally trigger one alert
+  alerta            Alerta?
+}
+
+// =============================================
+// SPRINT 2 MODELS (new)
+// =============================================
+
+// [HU-05] Presupuesto: Budget cap per category per month/year.
+// Why: Enables the core cooperative feature of controlling per-category monthly spending.
+// A user sets a limit (montoLimite) for a given category in a specific month (mes/anio).
+// When transactions exceed this limit in that same period, an alert is triggered (HU-06).
+model Presupuesto {
+  id            Int       @id @default(autoincrement())
+  categoriaId   Int
+  montoLimite   Float     // Maximum spending allowed for this category in this month/year
+  mes           Int       // Month: 1 = January, 12 = December
+  anio          Int       // Year: e.g. 2025
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relation: Each budget belongs to exactly one category
+  categoria     Categoria @relation(fields: [categoriaId], references: [id])
+  // Optional: alerts generated for this budget
+  alertas       Alerta[]
+
+  // [UNIQUE] One budget per category per month per year
+  // Why: Prevents duplicate budgets for the same period and category
+  @@unique([categoriaId, mes, anio])
+}
+
+// [HU-06] Alerta: Records budget-exceeded events.
+// Why: Persisting alerts allows historic tracking of overspending events,
+// which is valuable for financial analysis in a cooperative context.
+model Alerta {
+  id              Int          @id @default(autoincrement())
+  presupuestoId   Int
+  transaccionId   Int          @unique // One alert per triggering transaction
+  mensaje         String       // Human-readable message, e.g. "Superaste el presupuesto de Alimentación"
+  montoGastado    Float        // Total spent at the time of trigger
+  montoLimite     Float        // Budget limit at the time of trigger
+  createdAt       DateTime     @default(now())
+
+  presupuesto     Presupuesto  @relation(fields: [presupuestoId], references: [id])
+  transaccion     Transaccion  @relation(fields: [transaccionId], references: [id])
 }
