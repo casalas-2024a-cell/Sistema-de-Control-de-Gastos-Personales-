@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id           Int           @id @default(autoincrement())
+  email        String        @unique
+  nombre       String
+  password     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  
+  categorias   Categoria[]
+  transacciones Transaccion[]
+}
+
+model Categoria {
+  id           Int           @id @default(autoincrement())
+  nombre       String
+  descripcion  String?
+  usuarioId    Int
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id])
+  transacciones Transaccion[]
+}
+
+model TipoTransaccion {
+  id           Int           @id @default(autoincrement())
+  nombre       String        @unique
+  descripcion  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  transacciones Transaccion[]
+}
+
+model Periodo {
+  id           Int           @id @default(autoincrement())
+  nombre       String
+  fechaInicio  DateTime
+  fechaFin     DateTime
+  estado       String        @default("ACTIVO")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  transacciones Transaccion[]
+}
+
+model Transaccion {
+  id                Int             @id @default(autoincrement())
+  monto             Float
+  descripcion       String?
+  fecha             DateTime
+  usuarioId         Int
+  categoriaId       Int
+  tipoTransaccionId Int
+  periodoId         Int
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  usuario           Usuario         @relation(fields: [usuarioId], references: [id])
+  categoria         Categoria       @relation(fields: [categoriaId], references: [id])
+  tipoTransaccion   TipoTransaccion @relation(fields: [tipoTransaccionId], references: [id])
+  periodo           Periodo         @relation(fields: [periodoId], references: [id])
+}
