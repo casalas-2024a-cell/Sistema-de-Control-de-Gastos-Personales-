@@ -8,7 +8,7 @@ datasource db {
 }
 
 // =============================================
-// SPRINT 1 MODELS (unchanged)
+// SPRINT 1 MODELS
 // =============================================
 
 model Usuario {
@@ -25,13 +25,14 @@ model Usuario {
 
   categorias       Categoria[]
   transacciones    Transaccion[]
+  presupuestos     Presupuesto[]  // [HU-05] A user manages their own budgets
 }
 
 model Categoria {
   id           Int            @id @default(autoincrement())
   nombre       String
   descripcion  String?
-  tipo         String         @default("EGRESO") // INGRESO or EGRESO
+  tipo         String         @default("EGRESO") // "INGRESO" or "EGRESO"
   icono        String?
   usuarioId    Int
   createdAt    DateTime       @default(now())
@@ -39,7 +40,6 @@ model Categoria {
 
   usuario      Usuario        @relation(fields: [usuarioId], references: [id])
   transacciones Transaccion[]
-  // [HU-05] A category can have multiple budgets, one per month/year combination
   presupuestos  Presupuesto[]
 
   @@unique([usuarioId, nombre])
@@ -60,14 +60,14 @@ model Periodo {
   nombre       String        @unique // e.g. "2025-06"
   fechaInicio  DateTime
   fechaFin     DateTime
-  estado       String        @default("ACTIVO") // ACTIVO or INACTIVO
+  estado       String        @default("ACTIVO")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   transacciones Transaccion[]
+  presupuestos  Presupuesto[] // [HU-05] Budgets are linked to a specific period
 }
 
-// [UPDATED for Sprint 2] Transaccion now exposes relation to Alerta
 model Transaccion {
   id                Int             @id @default(autoincrement())
   monto             Float
@@ -84,47 +84,50 @@ model Transaccion {
   categoria         Categoria       @relation(fields: [categoriaId], references: [id])
   tipoTransaccion   TipoTransaccion @relation(fields: [tipoTransaccionId], references: [id])
   periodo           Periodo         @relation(fields: [periodoId], references: [id])
-  // [HU-06] One transaction can optionally trigger one alert
-  alerta            Alerta?
+  alerta            Alerta?         // [HU-06] One transaction can optionally trigger one alert
 }
 
 // =============================================
-// SPRINT 2 MODELS (new)
+// SPRINT 2 MODELS
 // =============================================
 
-// [HU-05] Presupuesto: Budget cap per category per month/year.
-// Why: Enables the core cooperative feature of controlling per-category monthly spending.
-// A user sets a limit (montoLimite) for a given category in a specific month (mes/anio).
-// When transactions exceed this limit in that same period, an alert is triggered (HU-06).
+// [HU-05] Presupuesto: Budget cap per user/category/period combination.
+// BREAKING CHANGE from previous implementation:
+//   - Added usuarioId: budgets are now user-owned (required by HU-05 acceptance criteria)
+//   - Added periodoId: budgets are tied to a Periodo (not raw mes/anio) for consistency
+//   - Kept mes/anio as computed helpers for calendar-based aggregation
+//   - Unique constraint now includes usuarioId: prevents same user from duplicating
 model Presupuesto {
   id            Int       @id @default(autoincrement())
+  usuarioId     Int
   categoriaId   Int
-  montoLimite   Float     // Maximum spending allowed for this category in this month/year
-  mes           Int       // Month: 1 = January, 12 = December
-  anio          Int       // Year: e.g. 2025
+  periodoId     Int
+  montoLimite   Float     // Max spending allowed for this category in this period
+  mes           Int       // Calendar month (1–12), derived from Periodo.fechaInicio
+  anio          Int       // Calendar year, derived from Periodo.fechaInicio
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  // Relation: Each budget belongs to exactly one category
+  usuario       Usuario   @relation(fields: [usuarioId], references: [id])
   categoria     Categoria @relation(fields: [categoriaId], references: [id])
-  // Optional: alerts generated for this budget
+  periodo       Periodo   @relation(fields: [periodoId], references: [id])
   alertas       Alerta[]
 
-  // [UNIQUE] One budget per category per month per year
-  // Why: Prevents duplicate budgets for the same period and category
-  @@unique([categoriaId, mes, anio])
+  // [UNIQUE] One budget per user+category+period — prevents duplicate plans
+  @@unique([usuarioId, categoriaId, periodoId])
 }
 
-// [HU-06] Alerta: Records budget-exceeded events.
-// Why: Persisting alerts allows historic tracking of overspending events,
-// which is valuable for financial analysis in a cooperative context.
+// [HU-06] Alerta: Records budget warning/exceeded events for audit and display.
+// tipoAlerta: "ADVERTENCIA" (80–100%) or "EXCEDIDO" (>100%)
 model Alerta {
   id              Int          @id @default(autoincrement())
   presupuestoId   Int
-  transaccionId   Int          @unique // One alert per triggering transaction
-  mensaje         String       // Human-readable message, e.g. "Superaste el presupuesto de Alimentación"
-  montoGastado    Float        // Total spent at the time of trigger
-  montoLimite     Float        // Budget limit at the time of trigger
+  transaccionId   Int          @unique
+  mensaje         String
+  tipoAlerta      String       @default("EXCEDIDO") // "ADVERTENCIA" or "EXCEDIDO"
+  porcentajeUso   Float        // Percentage at time of alert (e.g. 85.5 or 110.0)
+  montoGastado    Float
+  montoLimite     Float
   createdAt       DateTime     @default(now())
 
   presupuesto     Presupuesto  @relation(fields: [presupuestoId], references: [id])

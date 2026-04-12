@@ -1,6 +1,5 @@
 // [FILE] presupuesto.controller.ts
-// Exposes REST endpoints for budget management under /api/v1/presupuestos.
-// Each method delegates business logic to PresupuestoService — thin controller pattern.
+// REST endpoints for budget management (HU-05) and budget status dashboard (HU-06).
 
 import {
   Controller,
@@ -10,6 +9,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   ParseIntPipe,
 } from '@nestjs/common';
 import { PresupuestoService } from './presupuesto.service';
@@ -20,29 +20,41 @@ export class PresupuestoController {
   constructor(private readonly presupuestoService: PresupuestoService) {}
 
   // POST /api/v1/presupuestos
-  // Creates a new budget for a category in a given month/year.
-  // Body: { categoriaId, montoLimite, mes, anio }
+  // Creates a budget. Body: { usuarioId, categoriaId, periodoId, montoLimite }
   @Post()
   create(@Body() createPresupuestoDto: CreatePresupuestoDto) {
     return this.presupuestoService.create(createPresupuestoDto);
   }
 
-  // GET /api/v1/presupuestos
-  // Lists all budgets, newest first. Includes category name for display.
+  // GET /api/v1/presupuestos/estado/:periodoId?usuarioId=1
+  // [HU-06] Returns budget state with usage % and alert tiers for a full period.
+  // Must be declared BEFORE :id route to prevent NestJS routing conflict.
+  @Get('estado/:periodoId')
+  getEstado(
+    @Param('periodoId', ParseIntPipe) periodoId: number,
+    @Query('usuarioId', ParseIntPipe) usuarioId: number,
+  ) {
+    return this.presupuestoService.getEstadoPorPeriodo(periodoId, usuarioId);
+  }
+
+  // GET /api/v1/presupuestos?periodoId=1&usuarioId=1
+  // [HU-05] Lists all budgets for a user in a given period.
   @Get()
-  findAll() {
-    return this.presupuestoService.findAll();
+  findAll(
+    @Query('periodoId', ParseIntPipe) periodoId: number,
+    @Query('usuarioId', ParseIntPipe) usuarioId: number,
+  ) {
+    return this.presupuestoService.findByPeriodo(periodoId, usuarioId);
   }
 
   // GET /api/v1/presupuestos/:id
-  // Returns a single budget with its alerts history.
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.presupuestoService.findOne(id);
   }
 
   // PATCH /api/v1/presupuestos/:id
-  // Partially updates a budget. Uses PATCH (not PUT) because full replacement is not needed.
+  // Updates only montoLimite. Body: { montoLimite: number }
   @Patch(':id')
   update(
     @Param('id', ParseIntPipe) id: number,
@@ -52,7 +64,6 @@ export class PresupuestoController {
   }
 
   // DELETE /api/v1/presupuestos/:id
-  // Permanently deletes a budget. Related alerts are also removed.
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.presupuestoService.remove(id);

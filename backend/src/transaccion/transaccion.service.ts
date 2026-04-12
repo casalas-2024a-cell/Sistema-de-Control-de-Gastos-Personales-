@@ -1,10 +1,9 @@
 // [FILE] transaccion.service.ts
-// Core transaction business logic for HU-04 (CRUD), HU-05 (budget check), and HU-06 (alerts).
-//
-// ARCHITECTURE NOTE:
-// This service intentionally imports PresupuestoService to avoid duplicating the
-// budget calculation logic. This is NestJS dependency injection — PresupuestoModule
-// exports PresupuestoService, which is then imported in TransaccionModule.
+// Implements HU-04 complete transaction CRUD with:
+//   - FK existence validation (category, period, transaction type)
+//   - TYPE↔CATEGORY coherence validation (e.g. INGRESO transaction must use INGRESO category)
+//   - Filtering by both periodoId and optional categoriaId
+//   - HU-06: 80% warning + 100% exceeded alerts on EGRESO transactions
 
 import {
   Injectable,
@@ -15,60 +14,47 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PresupuestoService } from '../presupuesto/presupuesto.service';
 import { CreateTransaccionDto, UpdateTransaccionDto } from './dto/transaccion.dto';
 
-// [INTERFACE] AlertaResult
-// Defines the shape of the alert object returned inline with the create response.
-// Why an interface: Provides type safety without creating a separate DB entity for inline alerts.
 export interface AlertaResponse {
-  superado: boolean;       // true if the budget was exceeded
-  mensaje: string;         // Human-readable message for the frontend
-  montoGastado: number;    // Total spent this month in the category (after this transaction)
-  montoLimite: number;     // The budget limit that was exceeded
+  tipoAlerta: 'ADVERTENCIA' | 'EXCEDIDO'; // Which threshold was crossed
+  mensaje: string;
+  porcentajeUso: number;   // e.g. 85.5 or 112.0
+  montoGastado: number;
+  montoLimite: number;
 }
 
 @Injectable()
 export class TransaccionService {
-  // Why inject PresupuestoService here?
-  // TransaccionService needs to query budget data to implement HU-06.
-  // Instead of duplicating Prisma queries, we reuse PresupuestoService's
-  // calcularGastoMensual() and findPresupuestoPorCategoriaMesAnio() methods.
   constructor(
     private prisma: PrismaService,
     private presupuestoService: PresupuestoService,
   ) {}
 
-  // [HU-04] CREATE: Registers a new financial transaction.
-  // [HU-05/06] After creating, triggers budget check and returns inline alert if exceeded.
-  // Returns: { transaccion, alerta? } — the transaccion is always included; alerta is conditional.
   async create(data: CreateTransaccionDto): Promise<{ transaccion: any; alerta: AlertaResponse | null }> {
 
-    // --- STEP A: Validate related entities exist ---
-    // Why: Prisma will throw a cryptic internal error if FK relations don't exist.
-    // Better to throw a clear 404 before insert.
+    // ─── A. VALIDATE ALL FOREIGN KEYS EXIST ───
+    const categoria = await this.prisma.categoria.findUnique({ where: { id: data.categoriaId } });
+    if (!categoria) throw new NotFoundException(`Categoría con ID ${data.categoriaId} no encontrada.`);
 
-    const categoria = await this.prisma.categoria.findUnique({
-      where: { id: data.categoriaId },
-    });
-    if (!categoria) {
-      throw new NotFoundException(`Categoría con ID ${data.categoriaId} no encontrada.`);
-    }
+    const tipoTransaccion = await this.prisma.tipoTransaccion.findUnique({ where: { id: data.tipoTransaccionId } });
+    if (!tipoTransaccion) throw new NotFoundException(`Tipo de transacción con ID ${data.tipoTransaccionId} no encontrado.`);
 
-    const tipoTransaccion = await this.prisma.tipoTransaccion.findUnique({
-      where: { id: data.tipoTransaccionId },
-    });
-    if (!tipoTransaccion) {
-      throw new NotFoundException(`TipoTransaccion con ID ${data.tipoTransaccionId} no encontrado.`);
-    }
+    const periodo = await this.prisma.periodo.findUnique({ where: { id: data.periodoId } });
+    if (!periodo) throw new NotFoundException(`Período con ID ${data.periodoId} no encontrado.`);
 
-    const periodo = await this.prisma.periodo.findUnique({
-      where: { id: data.periodoId },
-    });
-    if (!periodo) {
-      throw new NotFoundException(`Período con ID ${data.periodoId} no encontrado.`);
+    // ─── B. COHERENCE VALIDATION: TipoTransaccion must match Categoria.tipo ───
+    // Why: A user shouldn't register an INGRESO transaction under an EGRESO category.
+    // This is a business rule of the cooperative's expense control system.
+    // Example: Tipo "INGRESO" + Categoría tipo "EGRESO" → reject with clear message.
+    if (tipoTransaccion.nombre !== categoria.tipo) {
+      throw new BadRequestException(
+        `El tipo de transacción "${tipoTransaccion.nombre}" no es coherente con el tipo de categoría "${categoria.tipo}". ` +
+        `Una categoría de tipo "${categoria.tipo}" solo acepta transacciones de tipo "${categoria.tipo}".`
+      );
     }
 
     const fechaTransaccion = new Date(data.fecha);
 
-    // --- STEP B: Persist the transaction ---
+    // ─── C. PERSIST THE TRANSACTION ───
     const transaccion = await this.prisma.transaccion.create({
       data: {
         monto: data.monto,
@@ -86,72 +72,82 @@ export class TransaccionService {
       },
     });
 
-    // --- STEP C: Budget Alert Check (HU-06) ---
-    // Only check budgets for EGRESO transactions (spending, not income).
-    // Why: Budgets cap spending; income doesn't consume a budget cap.
+    // ─── D. BUDGET ALERT CHECK (HU-06) ───
+    // Only EGRESO transactions can exceed a budget (income doesn't consume spending limits).
     let alerta: AlertaResponse | null = null;
 
     if (tipoTransaccion.nombre === 'EGRESO') {
-      // Extract month/year from the transaction date
-      const mes = fechaTransaccion.getMonth() + 1; // getMonth() is 0-indexed, adjust to 1-12
-      const anio = fechaTransaccion.getFullYear();
-
-      // Look for an active budget for this category in this month/year
-      // If no budget is configured, no alert is possible — cooperative flexibility.
-      const presupuesto = await this.presupuestoService.findPresupuestoPorCategoriaMesAnio(
+      // Find a budget for this user+category+period combination
+      const presupuesto = await this.presupuestoService.findPresupuestoPorCategoriaYPeriodo(
         data.categoriaId,
-        mes,
-        anio,
+        data.periodoId,
+        data.usuarioId,
       );
 
       if (presupuesto) {
-        // Calculate TOTAL spending for this category this month (including the new transaction)
-        // Why recalculate after insert: The new transaction is already in the DB,
-        // so the aggregate will include it — giving the true current total.
+        // Recalculate total spending AFTER the transaction was persisted
+        // This gives us the true current total including the new transaction
         const montoGastado = await this.presupuestoService.calcularGastoMensual(
           data.categoriaId,
-          mes,
-          anio,
+          presupuesto.mes,
+          presupuesto.anio,
         );
 
-        // Compare: if total spent exceeds the budget limit, fire an alert
-        if (montoGastado > presupuesto.montoLimite) {
-          // Build the user-friendly alert message
-          const mensaje = `⚠️ Has superado el presupuesto de la categoría "${categoria.nombre}". Gastado: ${montoGastado.toFixed(2)}, Límite: ${presupuesto.montoLimite.toFixed(2)}`;
+        // Calculate percentage usage: (spent / limit) × 100
+        const porcentajeUso = parseFloat(((montoGastado / presupuesto.montoLimite) * 100).toFixed(2));
 
-          // Persist the alert in the Alerta table for historical tracking
-          // Why persist: Allows future analytics, audit trails, and notification history
-          await this.prisma.alerta.create({
-            data: {
+        // Determine which threshold was crossed (if any)
+        // HU-06: >100% = EXCEDIDO (red), 80–100% = ADVERTENCIA (yellow)
+        let tipoAlerta: 'ADVERTENCIA' | 'EXCEDIDO' | null = null;
+        let mensaje = '';
+
+        if (porcentajeUso >= 100) {
+          tipoAlerta = 'EXCEDIDO';
+          mensaje = `🔴 Has superado el presupuesto de "${categoria.nombre}". Gastado: $${montoGastado.toFixed(2)} de $${presupuesto.montoLimite.toFixed(2)} (${porcentajeUso}%)`;
+        } else if (porcentajeUso >= 80) {
+          tipoAlerta = 'ADVERTENCIA';
+          mensaje = `🟡 Advertencia: llevas el ${porcentajeUso}% del presupuesto de "${categoria.nombre}". Gastado: $${montoGastado.toFixed(2)} de $${presupuesto.montoLimite.toFixed(2)}`;
+        }
+
+        if (tipoAlerta) {
+          // Persist alert for historical tracking and notification panel
+          // Use upsert pattern to avoid duplicate alerts per transaction
+          await this.prisma.alerta.upsert({
+            where: { transaccionId: transaccion.id },
+            create: {
               presupuestoId: presupuesto.id,
-              transaccionId: transaccion.id, // Links the alert to the triggering transaction
+              transaccionId: transaccion.id,
               mensaje,
+              tipoAlerta,
+              porcentajeUso,
               montoGastado,
               montoLimite: presupuesto.montoLimite,
             },
+            update: {
+              mensaje,
+              tipoAlerta,
+              porcentajeUso,
+              montoGastado,
+            },
           });
 
-          // Also return the alert INLINE in the API response
-          // Why: Immediate feedback to the client without a separate polling request
-          alerta = {
-            superado: true,
-            mensaje,
-            montoGastado,
-            montoLimite: presupuesto.montoLimite,
-          };
+          alerta = { tipoAlerta, mensaje, porcentajeUso, montoGastado, montoLimite: presupuesto.montoLimite };
         }
       }
     }
 
-    // Return both the transaction and optional alert together
     return { transaccion, alerta };
   }
 
-  // [HU-04] READ ALL: Returns all transactions for a user within a period.
-  // Includes related data for display in transaction lists.
-  findByPeriodAndUser(periodoId: number, usuarioId: number) {
+  // [HU-04 — LIST] Returns transactions filtered by period, user, and optionally category.
+  // Why optional categoriaId: HU-04 explicitly requires filtering by both period AND category.
+  findAll(periodoId: number, usuarioId: number, categoriaId?: number) {
     return this.prisma.transaccion.findMany({
-      where: { periodoId, usuarioId },
+      where: {
+        periodoId,
+        usuarioId,
+        ...(categoriaId && { categoriaId }), // Only apply category filter if provided
+      },
       orderBy: { fecha: 'desc' },
       include: {
         categoria: { select: { nombre: true, tipo: true, icono: true } },
@@ -160,7 +156,7 @@ export class TransaccionService {
     });
   }
 
-  // [HU-04] READ ONE: Returns a single transaction with full details.
+  // [HU-04 — FIND ONE] Returns a single transaction with full details including alert.
   async findOne(id: number) {
     const transaccion = await this.prisma.transaccion.findUnique({
       where: { id },
@@ -168,22 +164,16 @@ export class TransaccionService {
         categoria: { select: { nombre: true, tipo: true } },
         tipoTransaccion: { select: { nombre: true } },
         periodo: { select: { nombre: true } },
-        // Include associated alert if one was generated
         alerta: true,
       },
     });
-    if (!transaccion) {
-      throw new NotFoundException(`Transacción con ID ${id} no encontrada.`);
-    }
+    if (!transaccion) throw new NotFoundException(`Transacción con ID ${id} no encontrada.`);
     return transaccion;
   }
 
-  // [HU-04] UPDATE: Modifies an existing transaction (partial PATCH).
-  // Note: Changing a transaction won't retroactively recalculate past alerts —
-  // this is intentional to preserve the alert audit trail.
+  // [HU-04 — UPDATE] Partially updates a transaction.
   async update(id: number, data: UpdateTransaccionDto) {
-    await this.findOne(id); // Validate it exists first
-
+    await this.findOne(id);
     return this.prisma.transaccion.update({
       where: { id },
       data: {
@@ -197,30 +187,21 @@ export class TransaccionService {
     });
   }
 
-  // [HU-04] DELETE: Permanently removes a transaction and its associated alert (if any).
-  // Why: If a transaction is deleted, its alert is no longer meaningful.
+  // [HU-04 — DELETE] Removes a transaction and its linked alert.
   async remove(id: number) {
-    await this.findOne(id); // Validate it exists
-
-    // Delete the associated Alerta first (FK constraint — Alerta references Transaccion)
+    await this.findOne(id);
     await this.prisma.alerta.deleteMany({ where: { transaccionId: id } });
-
     return this.prisma.transaccion.delete({ where: { id } });
   }
 
-  // [HU-06] ALERT HISTORY: Returns all alerts for a specific user.
-  // Used to display a notification panel on the frontend.
+  // [HU-06] Returns alert history for a user's notification panel.
   findAlertasByUser(usuarioId: number) {
     return this.prisma.alerta.findMany({
-      where: {
-        transaccion: { usuarioId },
-      },
+      where: { transaccion: { usuarioId } },
       orderBy: { createdAt: 'desc' },
       include: {
         presupuesto: {
-          include: {
-            categoria: { select: { nombre: true, icono: true } },
-          },
+          include: { categoria: { select: { nombre: true, icono: true } } },
         },
       },
     });

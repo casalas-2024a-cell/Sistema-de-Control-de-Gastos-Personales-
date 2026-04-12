@@ -2,46 +2,33 @@ import {
   IsInt,
   IsNumber,
   IsPositive,
-  Min,
-  Max,
+  IsOptional,
 } from 'class-validator';
 
 // [DTO] CreatePresupuestoDto
-// Validates the request body when creating a new budget.
-// Why class-validator: Ensures invalid data is rejected at the controller level
-// before reaching the service or database layer — following fail-fast principle.
+// HU-05: Budget is now tied to a specific usuario + categoria + periodo triple.
+// The mes/anio are NOT sent by the client — they are derived on the service
+// from the Periodo.fechaInicio date, ensuring single source of truth.
 export class CreatePresupuestoDto {
+  @IsInt({ message: 'usuarioId debe ser un número entero' })
+  usuarioId: number;
+
   @IsInt({ message: 'categoriaId debe ser un número entero' })
-  categoriaId: number; // The category this budget applies to
+  categoriaId: number;
+
+  @IsInt({ message: 'periodoId debe ser un número entero' })
+  periodoId: number; // Links budget to a Periodo — period must exist
 
   @IsNumber({}, { message: 'montoLimite debe ser un número' })
-  @IsPositive({ message: 'montoLimite debe ser un valor positivo' })
-  montoLimite: number; // Maximum allowed spending amount for the given month/year
-
-  @IsInt()
-  @Min(1, { message: 'El mes debe estar entre 1 y 12' })
-  @Max(12, { message: 'El mes debe estar entre 1 y 12' })
-  mes: number; // Month number (1 = January ... 12 = December)
-
-  @IsInt()
-  @Min(2000, { message: 'El año debe ser superior al 2000' })
-  anio: number; // Full year, e.g. 2025
+  @IsPositive({ message: 'montoLimite debe ser un valor positivo mayor a cero' })
+  montoLimite: number;
 }
 
-// [DTO] UpdatePresupuestoDto
-// All fields optional — supports partial updates (PATCH semantics).
-// Why: PATCH allows only changing what's necessary, reducing payload size and accidental overwrites.
+// [DTO] UpdatePresupuestoDto — Only the limit can be updated post-creation.
+// Changing usuario/category/period would require deleting and recreating the budget.
 export class UpdatePresupuestoDto {
-  @IsNumber()
-  @IsPositive()
+  @IsOptional()
+  @IsNumber({}, { message: 'montoLimite debe ser un número' })
+  @IsPositive({ message: 'montoLimite debe ser un valor positivo' })
   montoLimite?: number;
-
-  @IsInt()
-  @Min(1)
-  @Max(12)
-  mes?: number;
-
-  @IsInt()
-  @Min(2000)
-  anio?: number;
 }

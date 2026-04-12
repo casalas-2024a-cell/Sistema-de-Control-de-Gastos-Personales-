@@ -1,17 +1,9 @@
 // [FILE] transaccion.controller.ts
-// Exposes REST endpoints for transaction management under /api/v1/transacciones.
-// Also exposes the alerts endpoint under /api/v1/transacciones/alertas/:usuarioId
+// Exposes full CRUD for transactions (HU-04) and alerts endpoint (HU-06).
 
 import {
-  Controller,
-  Get,
-  Post,
-  Patch,
-  Delete,
-  Body,
-  Param,
-  ParseIntPipe,
-  Query,
+  Controller, Get, Post, Patch, Delete,
+  Body, Param, Query, ParseIntPipe,
 } from '@nestjs/common';
 import { TransaccionService } from './transaccion.service';
 import { CreateTransaccionDto, UpdateTransaccionDto } from './dto/transaccion.dto';
@@ -21,52 +13,49 @@ export class TransaccionController {
   constructor(private readonly transaccionService: TransaccionService) {}
 
   // POST /api/v1/transacciones
-  // Creates a transaction and returns it alongside any budget alert if exceeded.
-  // Response shape: { success: true, data: { transaccion, alerta } }
-  // The `alerta` field is null if no budget was exceeded.
+  // Creates a transaction. On success returns { transaccion, alerta }.
+  // alerta is null if no budget threshold was crossed.
   @Post()
-  create(@Body() createTransaccionDto: CreateTransaccionDto) {
-    return this.transaccionService.create(createTransaccionDto);
+  create(@Body() dto: CreateTransaccionDto) {
+    return this.transaccionService.create(dto);
   }
 
-  // GET /api/v1/transacciones?periodoId=1&usuarioId=2
-  // Lists all transactions for a user in a given period.
+  // GET /api/v1/transacciones?periodoId=1&usuarioId=1&categoriaId=2 (categoriaId optional)
+  // [HU-04] List with mandatory period filter + optional category filter.
   @Get()
   findAll(
     @Query('periodoId', ParseIntPipe) periodoId: number,
     @Query('usuarioId', ParseIntPipe) usuarioId: number,
+    @Query('categoriaId') categoriaId?: string,
   ) {
-    return this.transaccionService.findByPeriodAndUser(periodoId, usuarioId);
+    return this.transaccionService.findAll(
+      periodoId,
+      usuarioId,
+      categoriaId ? parseInt(categoriaId) : undefined,
+    );
   }
 
   // GET /api/v1/transacciones/alertas/:usuarioId
-  // Returns all budget-exceeded alerts for a user (notification history).
-  // Why separate endpoint: Alerts are a distinct view from transactions.
-  // NOTE: this route must be declared BEFORE :id to prevent routing conflict
+  // [HU-06] Returns all budget alerts for a user (notification history).
+  // Declared BEFORE :id to avoid routing ambiguity.
   @Get('alertas/:usuarioId')
   findAlertas(@Param('usuarioId', ParseIntPipe) usuarioId: number) {
     return this.transaccionService.findAlertasByUser(usuarioId);
   }
 
   // GET /api/v1/transacciones/:id
-  // Returns a single transaction with its data and optional alert.
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.transaccionService.findOne(id);
   }
 
   // PATCH /api/v1/transacciones/:id
-  // Partially updates a transaction (amount, description, date, etc.).
   @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updateTransaccionDto: UpdateTransaccionDto,
-  ) {
-    return this.transaccionService.update(id, updateTransaccionDto);
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTransaccionDto) {
+    return this.transaccionService.update(id, dto);
   }
 
   // DELETE /api/v1/transacciones/:id
-  // Removes a transaction and its associated alert record.
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.transaccionService.remove(id);
