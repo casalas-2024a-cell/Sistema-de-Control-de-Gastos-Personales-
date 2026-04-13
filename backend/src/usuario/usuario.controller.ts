@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { CreateUsuarioDto, UpdateUsuarioDto } from './dto/usuario.dto';
 
@@ -12,11 +22,11 @@ export class UsuarioController {
   }
 
   @Get()
-  findAll(
-    @Query('skip') skip?: string,
-    @Query('take') take?: string
-  ) {
-    return this.usuarioService.findAll(skip ? parseInt(skip) : 0, take ? parseInt(take) : 10);
+  findAll(@Query('skip') skip?: string, @Query('take') take?: string) {
+    return this.usuarioService.findAll(
+      skip ? parseInt(skip) : 0,
+      take ? parseInt(take) : 10,
+    );
   }
 
   @Get(':id')
@@ -26,8 +36,8 @@ export class UsuarioController {
 
   @Put(':id')
   update(
-    @Param('id', ParseIntPipe) id: number, 
-    @Body() updateUsuarioDto: UpdateUsuarioDto
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUsuarioDto: UpdateUsuarioDto,
   ) {
     return this.usuarioService.update(id, updateUsuarioDto);
   }

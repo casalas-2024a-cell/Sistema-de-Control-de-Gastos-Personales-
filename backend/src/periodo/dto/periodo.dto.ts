@@ -1,4 +1,10 @@
-import { IsString, IsDateString, IsOptional, IsIn, Validate } from 'class-validator';
+import {
+  IsString,
+  IsDateString,
+  IsOptional,
+  IsIn,
+  Validate,
+} from 'class-validator';
 
 export class CreatePeriodoDto {
   @IsString()

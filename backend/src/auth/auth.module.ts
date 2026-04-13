@@ -28,7 +28,10 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET', 'FALLBACK_SECRET_CHANGE_IN_PROD'),
+        secret: config.get<string>(
+          'JWT_SECRET',
+          'FALLBACK_SECRET_CHANGE_IN_PROD',
+        ),
         signOptions: {
           expiresIn: '24h', // Tokens expire in 24 hours — balance of security vs UX
         },
@@ -38,8 +41,8 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
-    JwtStrategy,   // Passport strategy — validates incoming tokens
-    JwtAuthGuard,  // Guard used by @UseGuards(JwtAuthGuard)
+    JwtStrategy, // Passport strategy — validates incoming tokens
+    JwtAuthGuard, // Guard used by @UseGuards(JwtAuthGuard)
   ],
   // Export guard + module so any importing module can apply JwtAuthGuard to its routes
   exports: [JwtAuthGuard, JwtModule],

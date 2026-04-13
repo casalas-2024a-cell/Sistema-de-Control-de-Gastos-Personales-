@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCategoriaDto, UpdateCategoriaDto } from './dto/categoria.dto';
 
@@ -11,9 +16,9 @@ export class CategoriaService {
       where: {
         usuarioId_nombre: {
           usuarioId: data.usuarioId,
-          nombre: data.nombre
-        }
-      }
+          nombre: data.nombre,
+        },
+      },
     });
 
     if (existing) {
@@ -26,7 +31,7 @@ export class CategoriaService {
   async findAllByUser(usuarioId: number) {
     return this.prisma.categoria.findMany({
       where: { usuarioId },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -39,9 +44,9 @@ export class CategoriaService {
         where: {
           usuarioId_nombre: {
             usuarioId: categoria.usuarioId,
-            nombre: data.nombre
-          }
-        }
+            nombre: data.nombre,
+          },
+        },
       });
       if (existing) {
         throw new ConflictException('Ya tienes una categoría con este nombre.');
@@ -50,7 +55,7 @@ export class CategoriaService {
 
     return this.prisma.categoria.update({
       where: { id },
-      data
+      data,
     });
   }
 
@@ -59,11 +64,13 @@ export class CategoriaService {
     if (!categoria) throw new NotFoundException('Categoría no encontrada');
 
     const transaccionesCount = await this.prisma.transaccion.count({
-      where: { categoriaId: id }
+      where: { categoriaId: id },
     });
 
     if (transaccionesCount > 0) {
-      throw new BadRequestException('No se puede eliminar la categoría porque tiene transacciones asociadas.');
+      throw new BadRequestException(
+        'No se puede eliminar la categoría porque tiene transacciones asociadas.',
+      );
     }
 
     return this.prisma.categoria.delete({ where: { id } });

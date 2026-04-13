@@ -10,10 +10,10 @@
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
 
 export interface DateRangeParams {
-  mes: number;          // Validated month 1-12
-  anio: number;         // Validated year >= 2000
-  fechaInicio: Date;    // First moment of the month (computed)
-  fechaFin: Date;       // Last moment of the month (computed)
+  mes: number; // Validated month 1-12
+  anio: number; // Validated year >= 2000
+  fechaInicio: Date; // First moment of the month (computed)
+  fechaFin: Date; // Last moment of the month (computed)
 }
 
 @Injectable()
@@ -24,12 +24,16 @@ export class DateRangePipe implements PipeTransform {
 
     // Validate month: must be 1-12 (January = 1, December = 12)
     if (isNaN(mes) || mes < 1 || mes > 12) {
-      throw new BadRequestException('El parámetro "mes" debe ser un número entre 1 y 12.');
+      throw new BadRequestException(
+        'El parámetro "mes" debe ser un número entre 1 y 12.',
+      );
     }
 
     // Validate year: must be a reasonable calendar year
     if (isNaN(anio) || anio < 2000 || anio > 2100) {
-      throw new BadRequestException('El parámetro "anio" debe ser un año válido (2000-2100).');
+      throw new BadRequestException(
+        'El parámetro "anio" debe ser un año válido (2000-2100).',
+      );
     }
 
     // Pre-compute date boundaries so service methods receive ready-to-use Date objects.

@@ -1,34 +1,42 @@
 // [FILE] auth/auth.controller.ts
-// Exposes authentication endpoints under /api/v1/auth.
-// The login endpoint is PUBLIC (no guard). The profile endpoint is PROTECTED.
+// Authentication endpoints: login (public), register (public), profile (protected).
+//
+// HU-09: Uses @CurrentUser() decorator instead of raw req.user access.
 
-import { Controller, Post, Get, Body, Req, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { Request } from 'express';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // POST /api/v1/auth/login
-  // PUBLIC — No guard. Validates credentials and returns a JWT accessToken.
-  // Body: { email: string, password: string }
-  // Response: { accessToken: string, usuario: { id, nombres, email, moneda } }
+  // POST /api/v1/auth/login — PUBLIC
+  // Body: { email, password }
+  // Returns: { accessToken, usuario }
   @Post('login')
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
 
-  // GET /api/v1/auth/perfil
-  // PROTECTED — Requires valid JWT Bearer token.
+  // POST /api/v1/auth/register — PUBLIC
+  // Body: { nombres, apellidos, email, password, fechaNacimiento?, moneda? }
+  // Returns: { accessToken, usuario }
+  // WHY: Allows self-registration from the login page without admin intervention.
+  @Post('register')
+  register(@Body() registerDto: RegisterDto) {
+    return this.authService.register(registerDto);
+  }
+
+  // GET /api/v1/auth/perfil — PROTECTED
   // Returns the authenticated user's profile data.
-  // req.user is populated by JwtStrategy.validate() after guard passes.
+  // Uses @CurrentUser('userId') instead of raw @Req() for cleaner code.
   @UseGuards(JwtAuthGuard)
   @Get('perfil')
-  getPerfil(@Req() req: Request) {
-    const user = req.user as { userId: number; email: string };
-    return this.authService.getProfile(user.userId);
+  getPerfil(@CurrentUser('userId') userId: number) {
+    return this.authService.getProfile(userId);
   }
 }

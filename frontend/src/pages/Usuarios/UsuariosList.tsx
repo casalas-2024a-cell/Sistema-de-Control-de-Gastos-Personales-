@@ -1,16 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { UserPlus, Pencil, Trash2 } from 'lucide-react';
+import toast from 'react-hot-toast';
+
+interface Usuario {
+  id: number;
+  nombres: string;
+  apellidos: string;
+  email: string;
+  moneda: string;
+}
 
 export default function UsuariosList() {
-  const [usuarios, setUsuarios] = useState([]);
+  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   
-  useEffect(() => {
-    fetchUsuarios();
-  }, []);
-
-  const fetchUsuarios = async () => {
+  const fetchUsuarios = useCallback(async () => {
     try {
       const res = await axios.get('http://localhost:3000/api/v1/usuarios');
       if (res.data.success) {
@@ -18,16 +23,26 @@ export default function UsuariosList() {
       }
     } catch (error) {
       console.error(error);
+      toast.error('Error al cargar la lista de usuarios');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsuarios();
+  }, [fetchUsuarios]);
 
   const deleteUser = async (id: number) => {
-    if (!confirm('¿Estás seguro de desactivar este usuario?')) return;
+    if (!window.confirm('¿Estás seguro de desactivar este usuario?')) return;
     try {
       await axios.delete(`http://localhost:3000/api/v1/usuarios/${id}`);
+      toast.success('Usuario desactivado correctamente');
       fetchUsuarios();
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Error al eliminar');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response) {
+        toast.error(error.response.data.message || 'Error al eliminar');
+      } else {
+        toast.error('Error de red al eliminar usuario');
+      }
     }
   };
 
@@ -54,7 +69,7 @@ export default function UsuariosList() {
             </tr>
           </thead>
           <tbody>
-            {usuarios.map((u: any) => (
+            {usuarios.map((u) => (
               <tr key={u.id}>
                 <td>
                   <div style={{ fontWeight: 500 }}>{u.nombres} {u.apellidos}</div>

@@ -18,8 +18,8 @@ import { ConfigService } from '@nestjs/config';
 // JwtPayload: what we embed in the token at login time.
 // Keep it minimal — only identifiers needed for authorization decisions.
 export interface JwtPayload {
-  sub: number;     // Subject: the user's ID (standard JWT claim)
-  email: string;   // For display/logging purposes
+  sub: number; // Subject: the user's ID (standard JWT claim)
+  email: string; // For display/logging purposes
 }
 
 @Injectable()
@@ -32,7 +32,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Reject tokens that have passed their expiry date
       ignoreExpiration: false,
       // Read the secret from environment (never hardcode secrets in code)
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: configService.get<string>('JWT_SECRET', 'FALLBACK_SECRET'),
     });
   }
 

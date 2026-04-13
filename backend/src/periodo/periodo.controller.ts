@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Put, Body, Param, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Body,
+  Param,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { PeriodoService } from './periodo.service';
 import { CreatePeriodoDto, UpdatePeriodoDto } from './dto/periodo.dto';
 
@@ -18,8 +26,8 @@ export class PeriodoController {
 
   @Put(':id')
   update(
-    @Param('id', ParseIntPipe) id: number, 
-    @Body() updatePeriodoDto: UpdatePeriodoDto
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updatePeriodoDto: UpdatePeriodoDto,
   ) {
     return this.periodoService.update(id, updatePeriodoDto);
   }

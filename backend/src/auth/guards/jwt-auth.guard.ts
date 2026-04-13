@@ -8,7 +8,11 @@
 // WHY WRAP: Having our own named class prevents refactoring if we ever swap strategies.
 // It also allows overriding handleRequest() to customize the rejection response.
 
-import { Injectable, ExecutionContext, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  ExecutionContext,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
 @Injectable()
@@ -17,9 +21,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
   handleRequest(err: any, user: any, info: any, context: ExecutionContext) {
     if (err || !user) {
       // info contains Passport error details (e.g. 'TokenExpiredError', 'JsonWebTokenError')
-      const message = info?.name === 'TokenExpiredError'
-        ? 'El token JWT ha expirado. Por favor inicia sesión nuevamente.'
-        : 'Acceso no autorizado. Se requiere un token JWT válido.';
+      const message =
+        info?.name === 'TokenExpiredError'
+          ? 'El token JWT ha expirado. Por favor inicia sesión nuevamente.'
+          : 'Acceso no autorizado. Se requiere un token JWT válido.';
       throw new UnauthorizedException(message);
     }
     return user;

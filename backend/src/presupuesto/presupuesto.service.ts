@@ -9,12 +9,15 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { CreatePresupuestoDto, UpdatePresupuestoDto } from './dto/presupuesto.dto';
+import {
+  CreatePresupuestoDto,
+  UpdatePresupuestoDto,
+} from './dto/presupuesto.dto';
 
 // [HU-06] Threshold constants — defined here to make them easy to adjust.
 // Why constants: Avoids magic numbers scattered through the code.
-const UMBRAL_ADVERTENCIA = 80;  // Warn when spending reaches 80% of limit
-const UMBRAL_EXCEDIDO = 100;    // Alert as exceeded when over 100%
+const UMBRAL_ADVERTENCIA = 80; // Warn when spending reaches 80% of limit
+const UMBRAL_EXCEDIDO = 100; // Alert as exceeded when over 100%
 
 // [INTERFACE] EstadoPresupuesto
 // Shape of each item returned by getEstadoPorPeriodo().
@@ -24,7 +27,7 @@ export interface EstadoPresupuesto {
   categoria: { id: number; nombre: string; tipo: string; icono: string | null };
   montoLimite: number;
   totalGastado: number;
-  porcentajeUso: number;           // (totalGastado / montoLimite) * 100
+  porcentajeUso: number; // (totalGastado / montoLimite) * 100
   estadoAlerta: 'OK' | 'ADVERTENCIA' | 'EXCEDIDO'; // Visual indicator for frontend
 }
 
@@ -41,7 +44,9 @@ export class PresupuestoService {
       where: { id: data.categoriaId },
     });
     if (!categoria) {
-      throw new NotFoundException(`Categoría con ID ${data.categoriaId} no encontrada.`);
+      throw new NotFoundException(
+        `Categoría con ID ${data.categoriaId} no encontrada.`,
+      );
     }
 
     // 2. Validate period exists — the budget must be anchored to a real period
@@ -49,12 +54,16 @@ export class PresupuestoService {
       where: { id: data.periodoId },
     });
     if (!periodo) {
-      throw new NotFoundException(`Período con ID ${data.periodoId} no encontrado.`);
+      throw new NotFoundException(
+        `Período con ID ${data.periodoId} no encontrado.`,
+      );
     }
 
     // 3. Validate user owns the category (a user shouldn't budget someone else's category)
     if (categoria.usuarioId !== data.usuarioId) {
-      throw new BadRequestException('La categoría seleccionada no pertenece al usuario indicado.');
+      throw new BadRequestException(
+        'La categoría seleccionada no pertenece al usuario indicado.',
+      );
     }
 
     // 4. Derive mes/anio from the period start date — consistency over client-supplied values
@@ -95,7 +104,9 @@ export class PresupuestoService {
       where: { periodoId, usuarioId },
       orderBy: { createdAt: 'desc' },
       include: {
-        categoria: { select: { id: true, nombre: true, tipo: true, icono: true } },
+        categoria: {
+          select: { id: true, nombre: true, tipo: true, icono: true },
+        },
         periodo: { select: { nombre: true } },
       },
     });
@@ -124,7 +135,9 @@ export class PresupuestoService {
     return this.prisma.presupuesto.update({
       where: { id },
       data: {
-        ...(data.montoLimite !== undefined && { montoLimite: data.montoLimite }),
+        ...(data.montoLimite !== undefined && {
+          montoLimite: data.montoLimite,
+        }),
       },
       include: {
         categoria: { select: { nombre: true } },
@@ -147,12 +160,17 @@ export class PresupuestoService {
   //   2. Calculates porcentajeUso = (totalGastado / montoLimite) * 100
   //   3. Determines estadoAlerta: OK | ADVERTENCIA | EXCEDIDO
   // This is the primary endpoint for the dashboard progress-bar display.
-  async getEstadoPorPeriodo(periodoId: number, usuarioId: number): Promise<EstadoPresupuesto[]> {
+  async getEstadoPorPeriodo(
+    periodoId: number,
+    usuarioId: number,
+  ): Promise<EstadoPresupuesto[]> {
     // Fetch all budgets for this user+period, with their category data
     const presupuestos = await this.prisma.presupuesto.findMany({
       where: { periodoId, usuarioId },
       include: {
-        categoria: { select: { id: true, nombre: true, tipo: true, icono: true } },
+        categoria: {
+          select: { id: true, nombre: true, tipo: true, icono: true },
+        },
       },
     });
 
@@ -161,12 +179,17 @@ export class PresupuestoService {
     const estados: EstadoPresupuesto[] = await Promise.all(
       presupuestos.map(async (p) => {
         // Sum all EGRESO transactions for this category within this period's date range
-        const totalGastado = await this.calcularGastoMensual(p.categoriaId, p.mes, p.anio);
+        const totalGastado = await this.calcularGastoMensual(
+          p.categoriaId,
+          p.mes,
+          p.anio,
+        );
 
         // Core formula from HU-06: (total_gastado / monto_límite) × 100
-        const porcentajeUso = p.montoLimite > 0
-          ? parseFloat(((totalGastado / p.montoLimite) * 100).toFixed(2))
-          : 0;
+        const porcentajeUso =
+          p.montoLimite > 0
+            ? parseFloat(((totalGastado / p.montoLimite) * 100).toFixed(2))
+            : 0;
 
         // Determine status tier for color-coded frontend display
         // Green < 80%, Yellow 80-100%, Red > 100%
@@ -195,8 +218,12 @@ export class PresupuestoService {
 
   // Calculates total spending for a category in a given calendar month/year.
   // Called after each EGRESO transaction creation to check budget thresholds.
-  async calcularGastoMensual(categoriaId: number, mes: number, anio: number): Promise<number> {
-    const fechaInicio = new Date(anio, mes - 1, 1);          // First day of month
+  async calcularGastoMensual(
+    categoriaId: number,
+    mes: number,
+    anio: number,
+  ): Promise<number> {
+    const fechaInicio = new Date(anio, mes - 1, 1); // First day of month
     const fechaFin = new Date(anio, mes, 0, 23, 59, 59, 999); // Last moment of month
 
     const resultado = await this.prisma.transaccion.aggregate({
@@ -210,7 +237,11 @@ export class PresupuestoService {
   }
 
   // Finds a budget uniquely identified by user+category+period (new unique key).
-  findPresupuestoPorCategoriaYPeriodo(categoriaId: number, periodoId: number, usuarioId: number) {
+  findPresupuestoPorCategoriaYPeriodo(
+    categoriaId: number,
+    periodoId: number,
+    usuarioId: number,
+  ) {
     return this.prisma.presupuesto.findUnique({
       where: {
         usuarioId_categoriaId_periodoId: { usuarioId, categoriaId, periodoId },

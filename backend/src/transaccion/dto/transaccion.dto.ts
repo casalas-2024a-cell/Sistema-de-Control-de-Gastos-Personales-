@@ -22,7 +22,10 @@ export class CreateTransaccionDto {
   @IsString()
   descripcion?: string; // Human-readable note about the transaction
 
-  @IsDateString({}, { message: 'La fecha debe ser una fecha ISO válida (YYYY-MM-DD)' })
+  @IsDateString(
+    {},
+    { message: 'La fecha debe ser una fecha ISO válida (YYYY-MM-DD)' },
+  )
   fecha: string; // Transaction date — used to determine the month for budget aggregation
 
   @IsInt()

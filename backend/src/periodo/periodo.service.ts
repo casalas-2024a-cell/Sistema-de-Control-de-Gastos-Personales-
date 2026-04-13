@@ -1,4 +1,9 @@
-import { Injectable, ConflictException, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePeriodoDto, UpdatePeriodoDto } from './dto/periodo.dto';
 
@@ -11,19 +16,27 @@ export class PeriodoService {
     const fFin = new Date(data.fechaFin);
 
     if (fFin <= fInicio) {
-      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio.');
+      throw new BadRequestException(
+        'La fecha de fin debe ser posterior a la fecha de inicio.',
+      );
     }
 
-    const existingNombre = await this.prisma.periodo.findUnique({ where: { nombre: data.nombre } });
+    const existingNombre = await this.prisma.periodo.findUnique({
+      where: { nombre: data.nombre },
+    });
     if (existingNombre) {
       throw new ConflictException('Ya existe un período con este nombre.');
     }
 
     const estado = data.estado || 'ACTIVO';
     if (estado === 'ACTIVO') {
-      const activePeriod = await this.prisma.periodo.findFirst({ where: { estado: 'ACTIVO' } });
+      const activePeriod = await this.prisma.periodo.findFirst({
+        where: { estado: 'ACTIVO' },
+      });
       if (activePeriod) {
-        throw new ConflictException('Ya existe un período activo. Solo puede haber uno a la vez.');
+        throw new ConflictException(
+          'Ya existe un período activo. Solo puede haber uno a la vez.',
+        );
       }
     }
 
@@ -33,13 +46,13 @@ export class PeriodoService {
         fechaInicio: fInicio,
         fechaFin: fFin,
         estado: estado,
-      }
+      },
     });
   }
 
   async findAll() {
     return this.prisma.periodo.findMany({
-      orderBy: { fechaInicio: 'desc' }
+      orderBy: { fechaInicio: 'desc' },
     });
   }
 
@@ -47,24 +60,34 @@ export class PeriodoService {
     const periodo = await this.prisma.periodo.findUnique({ where: { id } });
     if (!periodo) throw new NotFoundException('Período no encontrado');
 
-    const fInicio = data.fechaInicio ? new Date(data.fechaInicio) : periodo.fechaInicio;
+    const fInicio = data.fechaInicio
+      ? new Date(data.fechaInicio)
+      : periodo.fechaInicio;
     const fFin = data.fechaFin ? new Date(data.fechaFin) : periodo.fechaFin;
 
     if (fFin <= fInicio) {
-      throw new BadRequestException('La fecha de fin debe ser posterior a la fecha de inicio.');
+      throw new BadRequestException(
+        'La fecha de fin debe ser posterior a la fecha de inicio.',
+      );
     }
 
     if (data.nombre && data.nombre !== periodo.nombre) {
-      const existing = await this.prisma.periodo.findUnique({ where: { nombre: data.nombre } });
+      const existing = await this.prisma.periodo.findUnique({
+        where: { nombre: data.nombre },
+      });
       if (existing) {
         throw new ConflictException('Ya existe un período con este nombre.');
       }
     }
 
     if (data.estado === 'ACTIVO' && periodo.estado !== 'ACTIVO') {
-      const activePeriod = await this.prisma.periodo.findFirst({ where: { estado: 'ACTIVO' } });
+      const activePeriod = await this.prisma.periodo.findFirst({
+        where: { estado: 'ACTIVO' },
+      });
       if (activePeriod && activePeriod.id !== id) {
-        throw new ConflictException('Ya existe un período activo. Solo puede haber uno a la vez.');
+        throw new ConflictException(
+          'Ya existe un período activo. Solo puede haber uno a la vez.',
+        );
       }
     }
 
@@ -75,7 +98,7 @@ export class PeriodoService {
         fechaInicio: data.fechaInicio ? fInicio : undefined,
         fechaFin: data.fechaFin ? fFin : undefined,
         estado: data.estado,
-      }
+      },
     });
   }
 }

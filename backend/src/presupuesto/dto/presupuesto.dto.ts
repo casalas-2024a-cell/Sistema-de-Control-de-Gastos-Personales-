@@ -1,9 +1,4 @@
-import {
-  IsInt,
-  IsNumber,
-  IsPositive,
-  IsOptional,
-} from 'class-validator';
+import { IsInt, IsNumber, IsPositive, IsOptional } from 'class-validator';
 
 // [DTO] CreatePresupuestoDto
 // HU-05: Budget is now tied to a specific usuario + categoria + periodo triple.
@@ -20,7 +15,9 @@ export class CreatePresupuestoDto {
   periodoId: number; // Links budget to a Periodo — period must exist
 
   @IsNumber({}, { message: 'montoLimite debe ser un número' })
-  @IsPositive({ message: 'montoLimite debe ser un valor positivo mayor a cero' })
+  @IsPositive({
+    message: 'montoLimite debe ser un valor positivo mayor a cero',
+  })
   montoLimite: number;
 }
 

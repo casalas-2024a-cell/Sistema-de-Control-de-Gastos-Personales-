@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Save, ArrowLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 export default function UsuarioForm() {
   const { id } = useParams();
@@ -31,24 +32,33 @@ export default function UsuarioForm() {
             moneda: user.moneda
           });
         }
+      }).catch(err => {
+        console.error(err);
+        toast.error('No se pudo cargar la información del usuario');
       });
     }
-  }, [id]);
+  }, [id, isEditing]);
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const payload = { ...form };
+      const payload: Partial<typeof form> = { ...form };
       if (isEditing && !payload.password) delete payload.password; // Don't send empty password
 
       if (isEditing) {
         await axios.put(`http://localhost:3000/api/v1/usuarios/${id}`, payload);
+        toast.success('Usuario actualizado correctamente');
       } else {
         await axios.post('http://localhost:3000/api/v1/usuarios', payload);
+        toast.success('Usuario creado correctamente');
       }
       navigate('/usuarios');
-    } catch (error: any) {
-      alert(error.response?.data?.message || 'Verification Error');
+    } catch (error: unknown) {
+      if (error instanceof AxiosError && error.response) {
+        toast.error(error.response.data.message || 'Verification Error');
+      } else {
+        toast.error('Error de conexión');
+      }
     }
   };
 

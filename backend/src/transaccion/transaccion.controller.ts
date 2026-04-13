@@ -2,11 +2,21 @@
 // Exposes full CRUD for transactions (HU-04) and alerts endpoint (HU-06).
 
 import {
-  Controller, Get, Post, Patch, Delete,
-  Body, Param, Query, ParseIntPipe,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TransaccionService } from './transaccion.service';
-import { CreateTransaccionDto, UpdateTransaccionDto } from './dto/transaccion.dto';
+import {
+  CreateTransaccionDto,
+  UpdateTransaccionDto,
+} from './dto/transaccion.dto';
 
 @Controller('transacciones')
 export class TransaccionController {
@@ -51,7 +61,10 @@ export class TransaccionController {
 
   // PATCH /api/v1/transacciones/:id
   @Patch(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateTransaccionDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateTransaccionDto,
+  ) {
     return this.transaccionService.update(id, dto);
   }
 
