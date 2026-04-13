@@ -1,103 +1,132 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { clsx } from 'clsx';
-import { LayoutDashboard, Users, Tags, Calendar, ArrowLeftRight, PiggyBank } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
+import { LayoutDashboard, Users, Tags, Calendar, ArrowLeftRight, PiggyBank, LogOut } from 'lucide-react';
 import React from 'react';
+import { getToken, getUser, clearAuth } from './lib/auth';
 
-// Lazy-loaded pages for code splitting (only loaded when navigated to)
+// Initialize Axios interceptors on app load
+import './lib/auth';
+
+// Lazy-loaded pages
+const LoginPage = React.lazy(() => import('./pages/Auth/LoginPage'));
+const DashboardPage = React.lazy(() => import('./pages/Dashboard/DashboardPage'));
 const UsuariosList = React.lazy(() => import('./pages/Usuarios/UsuariosList'));
 const UsuarioForm = React.lazy(() => import('./pages/Usuarios/UsuarioForm'));
 const CategoriasList = React.lazy(() => import('./pages/Categorias/CategoriasList'));
 const PeriodosList = React.lazy(() => import('./pages/Periodos/PeriodosList'));
-// Sprint 2 pages
 const TransaccionesList = React.lazy(() => import('./pages/Transacciones/TransaccionesList'));
 const PresupuestosList = React.lazy(() => import('./pages/Presupuestos/PresupuestosList'));
 
+// [HU-09] ProtectedRoute: redirects unauthenticated users to /login
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  return getToken() ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
 const navItems = [
   { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-  { name: 'Usuarios', path: '/usuarios', icon: Users },
-  { name: 'Categorias', path: '/categorias', icon: Tags },
-  { name: 'Períodos', path: '/periodos', icon: Calendar },
   { name: 'Transacciones', path: '/transacciones', icon: ArrowLeftRight },
   { name: 'Presupuestos', path: '/presupuestos', icon: PiggyBank },
+  { name: 'Categorias', path: '/categorias', icon: Tags },
+  { name: 'Períodos', path: '/periodos', icon: Calendar },
+  { name: 'Usuarios', path: '/usuarios', icon: Users },
 ];
 
 const Sidebar = () => {
   const location = useLocation();
+  const usuario = getUser();
+
+  const handleLogout = () => {
+    clearAuth();
+    window.location.href = '/login';
+  };
 
   return (
     <aside className="sidebar">
-      <div style={{ marginBottom: '2rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '12px' }}>
         <div style={{ width: 40, height: 40, borderRadius: 10, background: 'linear-gradient(135deg, var(--brand-primary), var(--brand-accent))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <PiggyBank size={20} color="white" />
         </div>
         <div>
-          <h2 style={{ fontSize: '1.1rem', marginBottom: 0 }}>CoopFinance</h2>
-          <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Panel de Control</span>
+          <h2 style={{ fontSize: '1.05rem', marginBottom: 0 }}>CoopFinance</h2>
+          <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Panel de Control</span>
         </div>
       </div>
 
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      {/* User Info Card */}
+      {usuario && (
+        <div style={{ background: 'var(--bg-tertiary)', borderRadius: 10, padding: '10px 12px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--brand-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, flexShrink: 0 }}>
+            {usuario.nombres?.[0]?.toUpperCase()}
+          </div>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{usuario.nombres}</div>
+            <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>{usuario.moneda}</div>
+          </div>
+        </div>
+      )}
+
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '3px', flex: 1 }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path || (item.path !== '/' && location.pathname.startsWith(item.path));
           return (
-            <Link
-              key={item.name}
-              to={item.path}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '11px 16px',
-                borderRadius: '8px',
-                color: isActive ? 'white' : 'var(--text-secondary)',
-                background: isActive ? 'rgba(99, 102, 241, 0.18)' : 'transparent',
-                textDecoration: 'none',
-                fontWeight: isActive ? 600 : 400,
-                fontSize: '0.9rem',
-                transition: 'all 0.18s',
-                borderLeft: isActive ? '2px solid var(--brand-primary)' : '2px solid transparent',
-              }}
-            >
-              <item.icon size={18} />
+            <Link key={item.name} to={item.path} style={{
+              display: 'flex', alignItems: 'center', gap: '12px',
+              padding: '10px 14px', borderRadius: '8px',
+              color: isActive ? 'white' : 'var(--text-secondary)',
+              background: isActive ? 'rgba(99, 102, 241, 0.18)' : 'transparent',
+              textDecoration: 'none', fontWeight: isActive ? 600 : 400,
+              fontSize: '0.875rem', transition: 'all 0.15s',
+              borderLeft: isActive ? '2px solid var(--brand-primary)' : '2px solid transparent',
+            }}>
+              <item.icon size={17} />
               {item.name}
             </Link>
           );
         })}
       </nav>
+
+      {/* Logout button at bottom */}
+      <button onClick={handleLogout} className="btn btn-secondary" style={{ marginTop: 'auto', width: '100%', justifyContent: 'center', fontSize: '0.85rem', padding: '10px 14px' }}>
+        <LogOut size={16} /> Cerrar Sesión
+      </button>
     </aside>
   );
 };
 
+// Main layout wrapper (sidebar + content) — only shown when authenticated
+const AppLayout = ({ children }: { children: React.ReactNode }) => (
+  <div className="app-container">
+    <Sidebar />
+    <main className="main-content">
+      <React.Suspense fallback={<div style={{ padding: 40, color: 'var(--text-secondary)' }}>Cargando módulo...</div>}>
+        {children}
+      </React.Suspense>
+    </main>
+  </div>
+);
+
 function App() {
   return (
     <Router>
-      <div className="app-container">
-        <Sidebar />
-        <main className="main-content">
-          <React.Suspense fallback={
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '50vh', color: 'var(--text-secondary)' }}>
-              Cargando módulo...
-            </div>
-          }>
-            <Routes>
-              <Route path="/" element={
-                <div className="animate-fade-in">
-                  <h1>Bienvenido a CoopFinance</h1>
-                  <p style={{ color: 'var(--text-secondary)' }}>Selecciona un módulo en la barra lateral para comenzar.</p>
-                </div>
-              } />
-              <Route path="/usuarios" element={<UsuariosList />} />
-              <Route path="/usuarios/new" element={<UsuarioForm />} />
-              <Route path="/usuarios/:id" element={<UsuarioForm />} />
-              <Route path="/categorias" element={<CategoriasList />} />
-              <Route path="/periodos" element={<PeriodosList />} />
-              {/* Sprint 2 */}
-              <Route path="/transacciones" element={<TransaccionesList />} />
-              <Route path="/presupuestos" element={<PresupuestosList />} />
-            </Routes>
-          </React.Suspense>
-        </main>
-      </div>
+      <React.Suspense fallback={null}>
+        <Routes>
+          {/* [PUBLIC] Login — accessible without token */}
+          <Route path="/login" element={<LoginPage />} />
+
+          {/* [PROTECTED] All app routes require authentication */}
+          <Route path="/" element={
+            <ProtectedRoute>
+              <AppLayout><DashboardPage /></AppLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/usuarios" element={<ProtectedRoute><AppLayout><UsuariosList /></AppLayout></ProtectedRoute>} />
+          <Route path="/usuarios/new" element={<ProtectedRoute><AppLayout><UsuarioForm /></AppLayout></ProtectedRoute>} />
+          <Route path="/usuarios/:id" element={<ProtectedRoute><AppLayout><UsuarioForm /></AppLayout></ProtectedRoute>} />
+          <Route path="/categorias" element={<ProtectedRoute><AppLayout><CategoriasList /></AppLayout></ProtectedRoute>} />
+          <Route path="/periodos" element={<ProtectedRoute><AppLayout><PeriodosList /></AppLayout></ProtectedRoute>} />
+          <Route path="/transacciones" element={<ProtectedRoute><AppLayout><TransaccionesList /></AppLayout></ProtectedRoute>} />
+          <Route path="/presupuestos" element={<ProtectedRoute><AppLayout><PresupuestosList /></AppLayout></ProtectedRoute>} />
+        </Routes>
+      </React.Suspense>
     </Router>
   );
 }
