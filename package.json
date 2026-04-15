@@ -1,0 +1,21 @@
+{
+  "name": "sistema-de-control-de-gastos-personales-",
+  "version": "1.0.0",
+  "description": "> Proyecto full-stack para la gestión financiera personal de asociados — Cooperativa de Ahorro",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casalas-2024a-cell/Sistema-de-Control-de-Gastos-Personales-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/casalas-2024a-cell/Sistema-de-Control-de-Gastos-Personales-/issues"
+  },
+  "homepage": "https://github.com/casalas-2024a-cell/Sistema-de-Control-de-Gastos-Personales-#readme"
+}
