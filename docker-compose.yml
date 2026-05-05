@@ -1,6 +1,7 @@
-version: '3.8'
-
 services:
+  # ─────────────────────────────────────────────
+  # PostgreSQL Database
+  # ─────────────────────────────────────────────
   app_db:
     image: postgres:15-alpine
     container_name: expense_control_db
@@ -13,6 +14,53 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d expense_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─────────────────────────────────────────────
+  # NestJS Backend API
+  # ─────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: expense_control_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://postgres:secret_password@app_db:5432/expense_db
+      JWT_SECRET: super_secret_jwt_key_cooperativa_2025
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      app_db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/v1/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  # ─────────────────────────────────────────────
+  # Next.js / Vite Frontend
+  # ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: expense_control_frontend
+    restart: always
+    environment:
+      VITE_API_URL: http://localhost:3000/api/v1
+    ports:
+      - "5173:80"
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:

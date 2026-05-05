@@ -14,6 +14,7 @@ import { PresupuestoModule } from './presupuesto/presupuesto.module';
 // [Sprint 3] New modules
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -31,7 +32,7 @@ import { DashboardModule } from './dashboard/dashboard.module';
     AuthModule, // HU-09: JWT authentication (Sprint 3)
     DashboardModule, // HU-07: Financial dashboard analytics (Sprint 3)
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}

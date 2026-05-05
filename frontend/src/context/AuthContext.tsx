@@ -9,7 +9,8 @@
 // A single React Context provides one source of truth for authentication,
 // making it impossible for different parts of the app to desync on auth state.
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
+import type { ReactNode } from 'react';
 import axios, { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
 
@@ -77,7 +78,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (res) => res,
       (error) => {
         if (error.response?.status === 401) {
-          if (getToken()) { // Only toast if there was a token
+          if (localStorage.getItem(TOKEN_KEY)) { // Only toast if there was a token
             toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.');
           }
           doLogout();

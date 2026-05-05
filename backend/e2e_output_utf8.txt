@@ -1,0 +1,353 @@
+﻿
+> backend@0.0.1 test:e2e
+> jest --config ./test/jest-e2e.json
+
+node.exe : FAIL test/app.e2e-spec.ts
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Users\Camila\AppData\Roaming ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL test/app.e2e-spec.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  ÔùÅ AppController (e2e) ÔÇ║ / (GET)
+
+    expected 200 "OK", got 404 "Not Found"
+
+    [0m [90m 20 |[39m     [36mreturn[39m request(app[33m.[39mgetHttpServer())
+     [90m 21 |[39m       [33m.[39m[36mget[39m([32m'/'[39m)
+    [31m[1m>[22m[39m[90m 22 |[39m       [33m.[39mexpect([35m200[39m)
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 23 |[39m       [33m.[39mexpect([32m'Hello World!'[39m)[33m;[39m
+     [90m 24 |[39m   })[33m;[39m
+     [90m 25 |[39m[0m
+
+      at Object.<anonymous> (app.e2e-spec.ts:22:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+PASS test/dashboard.e2e-spec.ts
+FAIL test/integracion-flujo.e2e-spec.ts
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 1: registrar usuario con datos completos
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 71 |[39m         monedaPreferida[33m:[39m [32m'COP'[39m[33m,[39m
+     [90m 72 |[39m       })
+    [31m[1m>[22m[39m[90m 73 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 74 |[39m
+     [90m 75 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 76 |[39m     
+expect(res[33m.[39mbody[33m.[39mdata[33m.[39maccessToken)[33m.[39mtoBeDefined()[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:73:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 2: iniciar sesi├│n y obtener JWT v├ílido
+
+    expected 201 "Created", got 401 "Unauthorized"
+
+    [0m [90m 87 |[39m       [33m.[39mpost([32m'/api/v1/auth/login'[39m)
+     [90m 88 |[39m       [33m.[39msend({ email[33m:[39m testEmail[33m,[39m password[33m:[39m testPassword })
+    [31m[1m>[22m[39m[90m 89 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m        [31m[1m^[22m[39m
+     [90m 90 |[39m
+     [90m 91 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 92 |[39m     
+expect(res[33m.[39mbody[33m.[39mdata[33m.[39maccessToken)[33m.[39mtoBeDefined()[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:89:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 3: tipos de transacci├│n INGRESO y EGRESO existen (seed)
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: undefined
+
+    [0m [90m 110 |[39m       [33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m 111 |[39m
+    [31m[1m>[22m[39m[90m 112 |[39m     
+expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m     |[39m                              [31m[1m^[22m[39m
+     [90m 113 |[39m     [36mconst[39m tipos[33m:[39m any[] [33m=[39m 
+res[33m.[39mbody[33m.[39mdata[33m;[39m
+     [90m 114 |[39m     [36mconst[39m ingreso [33m=[39m tipos[33m.[39mfind(t [33m=>[39m t[33m.[39mnombre 
+[33m===[39m [32m'INGRESO'[39m)[33m;[39m
+     [90m 115 |[39m     [36mconst[39m egreso [33m=[39m tipos[33m.[39mfind(t [33m=>[39m t[33m.[39mnombre 
+[33m===[39m [32m'EGRESO'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:112:30)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 4a: crear categor├¡a de tipo INGRESO
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 133 |[39m         usuarioId[33m,[39m
+     [90m 134 |[39m       })
+    [31m[1m>[22m[39m[90m 135 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 136 |[39m
+     [90m 137 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 138 |[39m     expect(res[33m.[39mbody[33m.[39mdata[33m.[39mnombre)[33m.[39mtoContain([32m'Salario 
+Flujo'[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:135:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 4b: crear categor├¡a de tipo EGRESO
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 150 |[39m         usuarioId[33m,[39m
+     [90m 151 |[39m       })
+    [31m[1m>[22m[39m[90m 152 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 153 |[39m
+     [90m 154 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 155 |[39m     categoriaGastoId [33m=[39m res[33m.[39mbody[33m.[39mdata[33m.[39mid[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:152:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 4c: categor├¡as aparecen en el listado del usuario
+
+    expected 200 "OK", got 400 "Bad Request"
+
+    [0m [90m 160 |[39m       [33m.[39m[36mget[39m([32m`/api/v1/categorias/usuario/${usuarioId}`[39m)
+     [90m 161 |[39m       [33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m [32m`Bearer 
+${jwtToken}`[39m)
+    [31m[1m>[22m[39m[90m 162 |[39m       [33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 163 |[39m
+     [90m 164 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 165 |[39m     [36mconst[39m ids [33m=[39m 
+res[33m.[39mbody[33m.[39mdata[33m.[39mmap((c[33m:[39m any) [33m=>[39m c[33m.[39mid)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:162:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 5: obtener per├¡odo activo o crear uno nuevo
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 197 |[39m           activo[33m:[39m [36mtrue[39m[33m,[39m
+     [90m 198 |[39m         })
+    [31m[1m>[22m[39m[90m 199 |[39m         [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m          [31m[1m^[22m[39m
+     [90m 200 |[39m
+     [90m 201 |[39m       periodoActivoId [33m=[39m createRes[33m.[39mbody[33m.[39mdata[33m.[39mid[33m;[39m
+     [90m 202 |[39m     }[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:199:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 6a: registrar transacci├│n de INGRESO
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 221 |[39m         periodoId[33m:[39m periodoActivoId[33m,[39m
+     [90m 222 |[39m       })
+    [31m[1m>[22m[39m[90m 223 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 224 |[39m
+     [90m 225 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 226 |[39m     
+expect(res[33m.[39mbody[33m.[39mdata[33m.[39mmonto)[33m.[39mtoBe([35m3000000[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:223:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 6b: registrar transacci├│n de EGRESO
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 241 |[39m         periodoId[33m:[39m periodoActivoId[33m,[39m
+     [90m 242 |[39m       })
+    [31m[1m>[22m[39m[90m 243 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 244 |[39m
+     [90m 245 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 246 |[39m     
+expect(res[33m.[39mbody[33m.[39mdata[33m.[39mmonto)[33m.[39mtoBe([35m250000[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:243:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 6c: las transacciones aparecen en el listado
+
+    expected 200 "OK", got 400 "Bad Request"
+
+    [0m [90m 251 |[39m       
+[33m.[39m[36mget[39m([32m`/api/v1/transacciones?periodoId=${periodoActivoId}&usuarioId=${usuarioId}`[39m)
+     [90m 252 |[39m       [33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m [32m`Bearer 
+${jwtToken}`[39m)
+    [31m[1m>[22m[39m[90m 253 |[39m       [33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 254 |[39m
+     [90m 255 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 256 |[39m     expect([33mArray[39m[33m.[39misArray(res[33m.[39mbody[33m.[39mdata))[33m.[39mtoBe(
+[36mtrue[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:253:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 7a: crear presupuesto para la categor├¡a de gasto
+
+    expected 201 "Created", got 400 "Bad Request"
+
+    [0m [90m 271 |[39m         montoLimite[33m:[39m [35m500000[39m[33m,[39m
+     [90m 272 |[39m       })
+    [31m[1m>[22m[39m[90m 273 |[39m       [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 274 |[39m
+     [90m 275 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 276 |[39m     
+expect(res[33m.[39mbody[33m.[39mdata[33m.[39mmontoLimite)[33m.[39mtoBe([35m500000[39m)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:273:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 7b: estado del presupuesto muestra porcentaje de uso 
+correcto (HU-06)
+
+    expected 200 "OK", got 400 "Bad Request"
+
+    [0m [90m 282 |[39m       
+[33m.[39m[36mget[39m([32m`/api/v1/presupuestos/estado/${periodoActivoId}?usuarioId=${usuarioId}`[39m)
+     [90m 283 |[39m       [33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m [32m`Bearer 
+${jwtToken}`[39m)
+    [31m[1m>[22m[39m[90m 284 |[39m       [33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 285 |[39m
+     [90m 286 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 287 |[39m     [36mconst[39m presupuesto [33m=[39m 
+res[33m.[39mbody[33m.[39mdata[33m.[39mfind((p[33m:[39m any) [33m=>[39m p[33m.[39mid [33m===[39m 
+presupuestoId)[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:284:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 8: consultar resumen financiero del per├¡odo incluye 
+ingresos, gastos y balance
+
+    expected 200 "OK", got 401 "Unauthorized"
+
+    [0m [90m 300 |[39m       [33m.[39m[36mget[39m([32m`/api/v1/dashboard/resumen/${periodoActivoId}`[39m)
+     [90m 301 |[39m       [33m.[39m[36mset[39m([32m'Authorization'[39m[33m,[39m [32m`Bearer 
+${jwtToken}`[39m)
+    [31m[1m>[22m[39m[90m 302 |[39m       [33m.[39mexpect([35m200[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 303 |[39m
+     [90m 304 |[39m     expect(res[33m.[39mbody[33m.[39msuccess)[33m.[39mtoBe([36mtrue[39m)[33m;[39m
+     [90m 305 |[39m     [36mconst[39m resumen [33m=[39m res[33m.[39mbody[33m.[39mdata[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:302:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+  ÔùÅ HU-11: Flujo de Integraci├│n Completo (e2e) ÔÇ║ PASO 9a: errores retornan formato uniforme { statusCode, 
+message, error }
+
+    expected 401 "Unauthorized", got 400 "Bad Request"
+
+    [0m [90m 327 |[39m       [33m.[39mpost([32m'/api/v1/auth/login'[39m)
+     [90m 328 |[39m       [33m.[39msend({ email[33m:[39m [32m'noexiste@test.com'[39m[33m,[39m 
+password[33m:[39m [32m'wrong'[39m })
+    [31m[1m>[22m[39m[90m 329 |[39m       [33m.[39mexpect([35m401[39m)[33m;[39m
+     [90m     |[39m        [31m[1m^[22m[39m
+     [90m 330 |[39m
+     [90m 331 |[39m     expect(res[33m.[39mbody[33m.[39mstatusCode)[33m.[39mtoBeDefined()[33m;[39m
+     [90m 332 |[39m     expect(res[33m.[39mbody[33m.[39mmessage)[33m.[39mtoBeDefined()[33m;[39m[0m
+
+      at Object.<anonymous> (integracion-flujo.e2e-spec.ts:329:8)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:309:14)
+      at ../node_modules/supertest/lib/test.js:365:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:342:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:195:23)
+      at localAssert (../node_modules/supertest/lib/test.js:138:14)
+      at Server.<anonymous> (../node_modules/supertest/lib/test.js:152:11)
+
+Test Suites: 2 failed, 1 passed, 3 total
+Tests:       15 failed, 4 passed, 19 total
+Snapshots:   0 total
+Time:        5.019 s, estimated 7 s
+Ran all test suites.

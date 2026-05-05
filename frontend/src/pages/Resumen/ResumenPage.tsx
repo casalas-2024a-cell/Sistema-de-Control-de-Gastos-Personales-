@@ -1,38 +1,31 @@
 // [FILE] frontend/src/pages/Resumen/ResumenPage.tsx
-// HU-07 FRONTEND: Resumen Financiero Mensual
-//
-// CRITERIA IMPLEMENTED:
-//   ☑ Consultar resumen de un período seleccionado (dropdown de períodos)
-//   ☑ Total ingresos, total egresos, balance neto (KPI cards)
-//   ☑ Desglose de gastos por categoría con participación porcentual (Donut chart)
-//   ☑ Estado de cada presupuesto: cumplido/alerta/excedido (table with icons)
-//   ☑ Consultable para cualquier período histórico (period selector)
+// HU-07 + HU-10: Resumen Financiero por período seleccionable con donut chart,
+// bar chart, KPIs y tabla de estado de presupuestos. Usa centralized api.ts.
 
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import {
   TrendingUp, TrendingDown, Wallet,
-  CheckCircle, AlertTriangle, XCircle,
+  CheckCircle, AlertTriangle, XCircle, FileBarChart, Loader,
 } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { dashboardApi, periodosApi } from '../../lib/api';
 
-const API = 'http://localhost:3000/api/v1';
-
-// Donut chart color palette — vibrant and distinguishable
+// Donut chart color palette
 const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#06b6d4', '#f97316', '#84cc16'];
 
-// Budget status icons and colors
 const ESTADO_CONFIG = {
-  CUMPLIDO: { icon: CheckCircle, color: 'var(--success)', label: 'Cumplido', bg: 'rgba(16,185,129,0.1)' },
-  ADVERTENCIA: { icon: AlertTriangle, color: 'var(--warning)', label: 'En Alerta', bg: 'rgba(245,158,11,0.1)' },
-  EXCEDIDO: { icon: XCircle, color: 'var(--danger)', label: 'Excedido', bg: 'rgba(239,68,68,0.1)' },
+  OK:         { icon: CheckCircle,  color: 'var(--success)', label: 'En regla',   bg: 'rgba(16,185,129,0.1)' },
+  CUMPLIDO:   { icon: CheckCircle,  color: 'var(--success)', label: 'Cumplido',   bg: 'rgba(16,185,129,0.1)' },
+  ADVERTENCIA:{ icon: AlertTriangle,color: 'var(--warning)', label: 'En Alerta',  bg: 'rgba(245,158,11,0.1)' },
+  EXCEDIDO:   { icon: XCircle,      color: 'var(--danger)',  label: 'Excedido',   bg: 'rgba(239,68,68,0.1)'  },
 };
 
-function KpiCard({ icon: Icon, label, value, color, sub }: any) {
+function KpiCard({ icon: Icon, label, value, color, sub }: {
+  icon: React.ElementType; label: string; value: string; color: string; sub?: string;
+}) {
   return (
     <div className="glass-panel" style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
       <div style={{
@@ -44,7 +37,7 @@ function KpiCard({ icon: Icon, label, value, color, sub }: any) {
         <Icon size={24} color={color} />
       </div>
       <div>
-        <div style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: 2 }}>{label}</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '0.78rem', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: '1.5rem', fontWeight: 700, color }}>{value}</div>
         {sub && <div style={{ color: 'var(--text-secondary)', fontSize: '0.72rem', marginTop: 2 }}>{sub}</div>}
       </div>
@@ -52,20 +45,42 @@ function KpiCard({ icon: Icon, label, value, color, sub }: any) {
   );
 }
 
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload?.[0]) {
+    const d = payload[0].payload;
+    return (
+      <div style={{
+        background: 'var(--bg-secondary)', border: '1px solid var(--border-color)',
+        borderRadius: 8, padding: '8px 12px', fontSize: '0.85rem',
+      }}>
+        <div style={{ fontWeight: 600 }}>{d.categoria}</div>
+        <div style={{ color: 'var(--text-secondary)' }}>
+          ${d.total?.toLocaleString('es-CO', { minimumFractionDigits: 2 })} ({d.participacion}%)
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function ResumenPage() {
-  const { usuario } = useAuth();
   const [periodos, setPeriodos] = useState<any[]>([]);
   const [selectedPeriodo, setSelectedPeriodo] = useState('');
   const [resumen, setResumen] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingPeriodos, setLoadingPeriodos] = useState(true);
 
   useEffect(() => {
-    axios.get(`${API}/periodos`).then(res => {
-      const p = res.data.data;
-      setPeriodos(p);
-      const activo = p.find((x: any) => x.estado === 'ACTIVO');
-      if (activo) setSelectedPeriodo(String(activo.id));
-    });
+    setLoadingPeriodos(true);
+    periodosApi.getAll()
+      .then(res => {
+        const ps = res.data.data ?? [];
+        setPeriodos(ps);
+        const activo = ps.find((x: any) => x.estado === 'ACTIVO');
+        if (activo) setSelectedPeriodo(String(activo.id));
+      })
+      .catch(() => {})
+      .finally(() => setLoadingPeriodos(false));
   }, []);
 
   useEffect(() => {
@@ -74,73 +89,107 @@ export default function ResumenPage() {
 
   const fetchResumen = async () => {
     setLoading(true);
+    setResumen(null);
     try {
-      const res = await axios.get(`${API}/dashboard/resumen/${selectedPeriodo}`);
+      const res = await dashboardApi.getResumenPorPeriodo(Number(selectedPeriodo));
       setResumen(res.data.data);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const formatCurrency = (n: number) =>
     `$${n.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
-  // Tooltip personalizado para el donut chart
-  const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload?.[0]) {
-      const d = payload[0].payload;
-      return (
-        <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8, padding: '8px 12px', fontSize: '0.85rem' }}>
-          <div style={{ fontWeight: 600 }}>{d.categoria}</div>
-          <div style={{ color: 'var(--text-secondary)' }}>{formatCurrency(d.total)} ({d.participacion}%)</div>
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="animate-fade-in">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28, flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1>Resumen Financiero</h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Evalúa tu salud financiera por período.</p>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <FileBarChart size={28} style={{ color: 'var(--brand-primary)' }} />
+            Resumen Financiero
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', marginTop: 4 }}>Evalúa tu salud financiera por período.</p>
         </div>
-        {/* Period Selector — HU-07: "Se puede consultar para cualquier período histórico" */}
-        <select value={selectedPeriodo} onChange={e => setSelectedPeriodo(e.target.value)}
-          style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-          {periodos.map(p => (
-            <option key={p.id} value={p.id}>{p.nombre} {p.estado === 'ACTIVO' ? '✦' : ''}</option>
-          ))}
-        </select>
+
+        {/* Period Selector */}
+        <div style={{ position: 'relative' }}>
+          {loadingPeriodos ? (
+            <div style={{ padding: '10px 16px', borderRadius: 8, background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', color: 'var(--text-secondary)', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Loader size={14} style={{ animation: 'spin 1s linear infinite' }} /> Cargando períodos...
+            </div>
+          ) : (
+            <select
+              value={selectedPeriodo}
+              onChange={e => setSelectedPeriodo(e.target.value)}
+              style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid var(--border-color)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.9rem', minWidth: 220 }}
+            >
+              <option value="">Seleccionar período...</option>
+              {periodos.map(p => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre} {p.estado === 'ACTIVO' ? '✦ Activo' : ''}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
-      {loading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200, color: 'var(--text-secondary)' }}>
-          Calculando resumen financiero...
+      {/* Loading state */}
+      {loading && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 300, gap: 12, color: 'var(--text-secondary)' }}>
+          <Loader size={24} style={{ animation: 'spin 1s linear infinite' }} />
+          <span>Calculando resumen financiero...</span>
         </div>
-      ) : !resumen ? (
-        <div className="glass-panel" style={{ textAlign: 'center', padding: 48, color: 'var(--text-secondary)' }}>
-          Selecciona un período para ver el resumen.
+      )}
+
+      {/* Empty state */}
+      {!loading && !resumen && (
+        <div className="glass-panel" style={{ textAlign: 'center', padding: '64px 48px', color: 'var(--text-secondary)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: 12 }}>📈</div>
+          <div style={{ fontSize: '1.1rem', fontWeight: 500, marginBottom: 8 }}>Selecciona un período</div>
+          <div style={{ fontSize: '0.875rem' }}>Elige un período en el selector de arriba para ver tu resumen financiero.</div>
         </div>
-      ) : (
+      )}
+
+      {/* Content */}
+      {!loading && resumen && (
         <>
           {/* KPI Cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 28 }}>
-            <KpiCard icon={TrendingUp} label="Total Ingresos" value={formatCurrency(resumen.totalIngresos)}
-              color="var(--success)" sub={`${resumen.cantidadIngresos} transacciones`} />
-            <KpiCard icon={TrendingDown} label="Total Gastos" value={formatCurrency(resumen.totalGastos)}
-              color="var(--danger)" sub={`${resumen.cantidadGastos} transacciones`} />
-            <KpiCard icon={Wallet} label="Balance Neto" value={formatCurrency(resumen.balance)}
+            <KpiCard
+              icon={TrendingUp} label="Total Ingresos"
+              value={formatCurrency(resumen.totalIngresos)}
+              color="var(--success)"
+              sub={`${resumen.cantidadIngresos ?? 0} transacciones`}
+            />
+            <KpiCard
+              icon={TrendingDown} label="Total Gastos"
+              value={formatCurrency(resumen.totalGastos)}
+              color="var(--danger)"
+              sub={`${resumen.cantidadGastos ?? 0} transacciones`}
+            />
+            <KpiCard
+              icon={Wallet} label="Balance Neto"
+              value={formatCurrency(resumen.balance)}
               color={resumen.balance >= 0 ? 'var(--success)' : 'var(--danger)'}
-              sub={resumen.balance >= 0 ? 'Saldo positivo ✓' : 'Déficit ⚠️'} />
+              sub={resumen.balance >= 0 ? 'Saldo positivo ✓' : 'Déficit ⚠️'}
+            />
           </div>
 
+          {/* Charts */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-            {/* DONUT CHART — HU-07: "Desglose de gastos por categoría con participación porcentual" */}
+            {/* Donut Chart */}
             <div className="glass-panel">
               <h2 style={{ fontSize: '1rem', marginBottom: 16 }}>Distribución de Gastos por Categoría</h2>
-              {resumen.desglosePorCategoria.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: 32 }}>Sin egresos en este período.</p>
+              {!resumen.desglosePorCategoria?.length ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>🥧</div>
+                  Sin egresos registrados en este período.
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
                   <PieChart>
@@ -151,7 +200,7 @@ export default function ResumenPage() {
                       paddingAngle={3}
                       dataKey="total"
                       nameKey="categoria"
-                      label={({ categoria, participacion }) => `${categoria} (${participacion}%)`}
+                      label={(props: any) => `${props.categoria ?? ''} (${props.participacion ?? 0}%)`}
                       labelLine={false}
                     >
                       {resumen.desglosePorCategoria.map((_: any, i: number) => (
@@ -164,18 +213,25 @@ export default function ResumenPage() {
               )}
             </div>
 
-            {/* BAR CHART — visual comparison of spending per category */}
+            {/* Bar Chart */}
             <div className="glass-panel">
               <h2 style={{ fontSize: '1rem', marginBottom: 16 }}>Monto por Categoría</h2>
-              {resumen.desglosePorCategoria.length === 0 ? (
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', textAlign: 'center', padding: 32 }}>Sin datos.</p>
+              {!resumen.desglosePorCategoria?.length ? (
+                <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+                  <div style={{ fontSize: '2rem', marginBottom: 8 }}>📊</div>
+                  Sin datos disponibles.
+                </div>
               ) : (
                 <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={resumen.desglosePorCategoria} layout="vertical" margin={{ left: 10 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-                    <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} />
+                  <BarChart data={resumen.desglosePorCategoria} layout="vertical" margin={{ left: 10, right: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                    <XAxis type="number" tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                     <YAxis type="category" dataKey="categoria" tick={{ fill: 'var(--text-primary)', fontSize: 12 }} width={100} />
-                    <Tooltip formatter={(v: any) => formatCurrency(v)} contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8 }} />
+                    <Tooltip
+                      formatter={(v: any) => [formatCurrency(v), 'Monto']}
+                      contentStyle={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: 8 }}
+                      labelStyle={{ color: 'var(--text-primary)' }}
+                    />
                     <Bar dataKey="total" radius={[0, 6, 6, 0]}>
                       {resumen.desglosePorCategoria.map((_: any, i: number) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -187,13 +243,14 @@ export default function ResumenPage() {
             </div>
           </div>
 
-          {/* BUDGET STATUS TABLE — HU-07: "Estado de cada presupuesto (cumplido, en alerta, excedido)" */}
+          {/* Budget Status Table */}
           <div className="glass-panel" style={{ padding: 0, overflow: 'hidden' }}>
             <div style={{ padding: '20px 24px 14px' }}>
               <h2 style={{ fontSize: '1rem', margin: 0 }}>Estado de Presupuestos del Período</h2>
             </div>
-            {resumen.estadoPresupuestos.length === 0 ? (
-              <div style={{ padding: '24px 24px 32px', color: 'var(--text-secondary)', fontSize: '0.875rem', textAlign: 'center' }}>
+            {!resumen.estadoPresupuestos?.length ? (
+              <div style={{ padding: '24px 24px 40px', color: 'var(--text-secondary)', fontSize: '0.875rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '2rem', marginBottom: 8 }}>💼</div>
                 No hay presupuestos configurados para este período.
               </div>
             ) : (
@@ -201,30 +258,30 @@ export default function ResumenPage() {
                 <thead>
                   <tr>
                     <th>Categoría</th>
-                    <th>Límite</th>
-                    <th>Gastado</th>
+                    <th style={{ textAlign: 'right' }}>Límite</th>
+                    <th style={{ textAlign: 'right' }}>Gastado</th>
                     <th>Uso</th>
                     <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
                   {resumen.estadoPresupuestos.map((p: any) => {
-                    const cfg = ESTADO_CONFIG[p.estado as keyof typeof ESTADO_CONFIG];
+                    const key = (p.estado as string) in ESTADO_CONFIG ? p.estado : 'OK';
+                    const cfg = ESTADO_CONFIG[key as keyof typeof ESTADO_CONFIG];
                     const Icon = cfg.icon;
                     return (
                       <tr key={p.presupuestoId}>
                         <td style={{ fontWeight: 500 }}>{p.icono ? `${p.icono} ` : ''}{p.categoria}</td>
-                        <td>{formatCurrency(p.montoLimite)}</td>
-                        <td style={{ color: p.estado === 'EXCEDIDO' ? 'var(--danger)' : 'var(--text-primary)', fontWeight: 600 }}>
+                        <td style={{ textAlign: 'right' }}>{formatCurrency(p.montoLimite)}</td>
+                        <td style={{ textAlign: 'right', fontWeight: 600, color: p.estado === 'EXCEDIDO' ? 'var(--danger)' : 'var(--text-primary)' }}>
                           {formatCurrency(p.gastado)}
                         </td>
-                        <td>
+                        <td style={{ minWidth: 140 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                             <div style={{ flex: 1, background: 'var(--bg-primary)', borderRadius: 999, height: 6 }}>
                               <div style={{
                                 height: '100%', width: `${Math.min(p.porcentaje, 100)}%`,
-                                borderRadius: 999, background: cfg.color,
-                                transition: 'width 0.5s ease',
+                                borderRadius: 999, background: cfg.color, transition: 'width 0.5s ease',
                               }} />
                             </div>
                             <span style={{ fontSize: '0.78rem', fontWeight: 600, color: cfg.color, minWidth: 44, textAlign: 'right' }}>
