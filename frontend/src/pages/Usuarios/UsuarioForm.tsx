@@ -21,17 +21,15 @@ export default function UsuarioForm() {
   useEffect(() => {
     if (isEditing) {
       axios.get(`http://localhost:3000/api/v1/usuarios/${id}`).then(res => {
-        if (res.data.success) {
-          const user = res.data.data;
-          setForm({
-            nombres: user.nombres,
-            apellidos: user.apellidos,
-            email: user.email,
-            password: '', 
-            fechaNacimiento: user.fechaNacimiento ? user.fechaNacimiento.split('T')[0] : '',
-            moneda: user.moneda
-          });
-        }
+        const user = res.data.data;
+        setForm({
+          nombres: user.nombres,
+          apellidos: user.apellidos,
+          email: user.email,
+          password: '', 
+          fechaNacimiento: user.fechaNacimiento ? user.fechaNacimiento.split('T')[0] : '',
+          moneda: user.moneda
+        });
       }).catch(err => {
         console.error(err);
         toast.error('No se pudo cargar la información del usuario');

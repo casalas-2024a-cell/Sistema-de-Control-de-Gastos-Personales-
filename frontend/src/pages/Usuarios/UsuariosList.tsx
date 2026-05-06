@@ -18,9 +18,7 @@ export default function UsuariosList() {
   const fetchUsuarios = useCallback(async () => {
     try {
       const res = await axios.get('http://localhost:3000/api/v1/usuarios');
-      if (res.data.success) {
-        setUsuarios(res.data.data.usuarios);
-      }
+      setUsuarios(res.data.data.usuarios || []);
     } catch (error) {
       console.error(error);
       toast.error('Error al cargar la lista de usuarios');

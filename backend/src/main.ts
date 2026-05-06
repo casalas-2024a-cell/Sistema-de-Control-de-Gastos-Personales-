@@ -10,6 +10,7 @@
 //   Pipe runs FIRST (validates input) → Controller logic runs → Interceptor wraps output
 //   If anything throws, the Filter catches it before the response is sent.
 
+import { RequestMethod } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
@@ -21,7 +22,10 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Global API prefix — all routes start with /api/v1/
-  app.setGlobalPrefix('api/v1');
+  // Exclude the root path so it can show a welcome message instead of 404
+  app.setGlobalPrefix('api/v1', {
+    exclude: [{ path: '/', method: RequestMethod.GET }],
+  });
 
   // Enable CORS for frontend communication (Vite runs on a different port)
   app.enableCors();
@@ -38,7 +42,7 @@ async function bootstrap() {
     new PrismaClientExceptionFilter()
   );
 
-  await app.listen(process.env.PORT || 3000);
+  await app.listen(process.env.PORT || 3000, '0.0.0.0');
   console.log(
     `🚀 API running on http://localhost:${process.env.PORT || 3000}/api/v1`,
   );

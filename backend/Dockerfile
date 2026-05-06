@@ -21,7 +21,9 @@ RUN npx prisma generate
 RUN npm run build
 
 # Also compile seed for production use (ts-node is a devDep)
-RUN npx tsc prisma/seed.ts --outDir dist/prisma --esModuleInterop --skipLibCheck --module commonjs --target ES2021 2>/dev/null || true
+# We ensure the output directory exists and compile specifically
+RUN mkdir -p dist/prisma && \
+    npx tsc prisma/seed.ts --outDir dist/prisma --esModuleInterop --skipLibCheck --module commonjs --target ES2021
 
 # ─────────────────────────────────────────────
 # Stage 2: Production image (lean)
@@ -50,4 +52,4 @@ ENV PORT=3000
 EXPOSE 3000
 
 # 1) Apply DB migrations  2) Seed reference data  3) Start NestJS
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/prisma/seed.js; node dist/main"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/prisma/seed.js; node dist/src/main"]
