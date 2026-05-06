@@ -261,3 +261,49 @@ table tbody tr:hover {
 .badge-success { background: rgba(16, 185, 129, 0.15); color: var(--success); }
 .badge-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
 .badge-info { background: rgba(99, 102, 241, 0.15); color: var(--brand-primary); }
+
+/* Spinner animation (used by Loader icon) */
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton shimmer animation (used by loading rows) */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Sticky utility for side forms */
+.sticky-top {
+  position: sticky;
+  top: 24px;
+}
+
+/* ─── Responsive Layout ─── */
+@media (max-width: 1024px) {
+  .app-container {
+    flex-direction: column;
+  }
+  .sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .sidebar nav {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    gap: 4px !important;
+  }
+  .main-content {
+    padding: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  h1 { font-size: 1.5rem; }
+  .main-content { padding: 16px; }
+}

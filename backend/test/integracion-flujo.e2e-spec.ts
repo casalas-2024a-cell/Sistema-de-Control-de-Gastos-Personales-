@@ -298,7 +298,6 @@ describe('HU-11: Flujo de Integración Completo (e2e)', () => {
     expect(res.body.data).toBeDefined();
     const presupuesto = res.body.data.find((p: any) => p.id === presupuestoId);
     expect(presupuesto).toBeDefined();
-    console.log('PRESUPUESTO EN 7B:', presupuesto);
     // 250000 gastado / 500000 límite = 50%
     expect(presupuesto.porcentajeUso).toBeCloseTo(50, 0);
     // 50% < 80% → estado OK

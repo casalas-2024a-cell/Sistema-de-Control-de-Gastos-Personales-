@@ -12,6 +12,10 @@ RUN npm ci
 
 COPY . .
 
+# Build arg for API URL — injected at build time by docker-compose
+ARG VITE_API_URL=http://localhost:3000/api/v1
+ENV VITE_API_URL=$VITE_API_URL
+
 # Build the Vite app for production
 RUN npm run build
 
